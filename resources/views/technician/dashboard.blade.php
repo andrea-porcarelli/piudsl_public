@@ -68,11 +68,8 @@
 <!-- Fixed Header -->
 <header class="fixed top-0 left-0 right-0 z-40 bg-brand-700 text-white shadow-lg" style="padding-top: env(safe-area-inset-top)">
     <div class="flex items-center justify-between px-4 h-14">
-        <div class="flex items-center space-x-2">
-            <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                <span class="text-white font-bold text-sm">P+</span>
-            </div>
-            <span class="font-semibold text-sm">Più<span class="text-brand-200">DSL</span></span>
+        <div class="flex items-center">
+            <img src="/piudsl.png" alt="PiùDSL" class="h-8 w-auto brightness-0 invert">
         </div>
 
         <span class="text-sm font-medium text-brand-100 truncate max-w-[140px]">{{ $userName }}</span>

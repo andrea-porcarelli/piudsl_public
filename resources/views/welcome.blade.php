@@ -91,13 +91,8 @@
         <div class="flex justify-between items-center h-16">
             <!-- Logo -->
             <div class="flex items-center">
-                <a href="#" class="flex items-center space-x-2 group">
-                    <div class="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center group-hover:shadow-lg group-hover:shadow-brand-200 transition-all duration-300">
-                        <span class="text-white font-bold text-lg">P+</span>
-                    </div>
-                    <span class="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors duration-300">
-                            Più<span class="text-brand-600">DSL</span>
-                        </span>
+                <a href="#" class="flex items-center group">
+                    <img src="/piudsl.png" alt="PiùDSL" class="h-10 w-auto group-hover:opacity-80 transition-opacity duration-300">
                 </a>
             </div>
 
@@ -910,13 +905,8 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             <!-- Logo & Description -->
             <div class="md:col-span-2">
-                <div class="flex items-center space-x-2 mb-4">
-                    <div class="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center">
-                        <span class="text-white font-bold text-lg">P+</span>
-                    </div>
-                    <span class="text-xl font-bold">
-                            Più<span class="text-brand-400">DSL</span>
-                        </span>
+                <div class="flex items-center mb-4">
+                    <img src="/piudsl.png" alt="PiùDSL" class="h-10 w-auto brightness-0 invert">
                 </div>
                 <p class="text-gray-400 mb-4 max-w-md">
                     Provider Internet specializzato in connettività fibra ottica, servizi VoIP e soluzioni avanzate per business e PA.
