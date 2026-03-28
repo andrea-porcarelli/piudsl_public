@@ -1,4 +1,22 @@
 services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      CADDY_DOMAIN: ${CADDY_DOMAIN}
+    depends_on:
+      - piudsl_app_panel
+    networks:
+      - piudsl_app
+
   piudsl_app_panel:
     restart: unless-stopped
     build:
@@ -9,8 +27,8 @@ services:
       - ./:/var/www
     working_dir: /var/www
     command: 'php artisan serve --host=0.0.0.0'
-    ports:
-      - '80:8000'
+    expose:
+      - '8000'
     depends_on:
       - redis
     networks:
@@ -22,6 +40,10 @@ services:
     command: redis-server --save "" --appendonly no
     networks:
       - piudsl_app
+
+volumes:
+  caddy_data:
+  caddy_config:
 
 networks:
   piudsl_app:
