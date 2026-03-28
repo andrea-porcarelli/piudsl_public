@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="it" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiùDSL - Provider Internet Fibra e Connettività Business</title>
+    <meta name="description" content="PiùDSL - Provider Internet specializzato in connettività fibra ottica, servizi VoIP, videosorveglianza e soluzioni per business e PA.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'display': ['Outfit', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        'brand': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'accent': {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'slide-in-right': 'slideInRight 0.6s ease-out',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        slideInRight: {
+                            '0%': { transform: 'translateX(20px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-display antialiased bg-white text-gray-900 selection:bg-brand-200">
+
+<!-- Navigation -->
+<nav class="fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 z-50 transition-all duration-300" id="navbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <!-- Logo -->
+            <div class="flex items-center">
+                <a href="#" class="flex items-center space-x-2 group">
+                    <div class="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center group-hover:shadow-lg group-hover:shadow-brand-200 transition-all duration-300">
+                        <span class="text-white font-bold text-lg">P+</span>
+                    </div>
+                    <span class="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors duration-300">
+                            Più<span class="text-brand-600">DSL</span>
+                        </span>
+                </a>
+            </div>
+
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#home" class="text-gray-700 hover:text-brand-600 font-medium transition-colors duration-200">Home</a>
+                <a href="#services" class="text-gray-700 hover:text-brand-600 font-medium transition-colors duration-200">Servizi</a>
+                <a href="#pricing" class="text-gray-700 hover:text-brand-600 font-medium transition-colors duration-200">Tariffe</a>
+                <a href="#business" class="text-gray-700 hover:text-brand-600 font-medium transition-colors duration-200">Business</a>
+                <a href="#about" class="text-gray-700 hover:text-brand-600 font-medium transition-colors duration-200">Chi Siamo</a>
+                <a href="#contact" class="text-gray-700 hover:text-brand-600 font-medium transition-colors duration-200">Contatti</a>
+            </div>
+
+            <!-- Actions -->
+            <div class="hidden md:flex items-center space-x-4">
+                <a href="tel:+3908231800100" class="text-gray-600 hover:text-brand-600 transition-colors duration-200">
+                    <i data-feather="phone" class="w-5 h-5"></i>
+                </a>
+                <button onclick="openClientArea()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:shadow-brand-200">
+                    Area Clienti
+                </button>
+            </div>
+
+            <!-- Mobile menu button -->
+            <button class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200" onclick="toggleMobileMenu()">
+                <i data-feather="menu" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div class="md:hidden hidden bg-white border-t border-gray-100" id="mobile-menu">
+        <div class="px-4 py-2 space-y-1">
+            <a href="#home" class="block px-3 py-2 text-gray-700 hover:text-brand-600 hover:bg-gray-50 rounded-md transition-colors duration-200">Home</a>
+            <a href="#services" class="block px-3 py-2 text-gray-700 hover:text-brand-600 hover:bg-gray-50 rounded-md transition-colors duration-200">Servizi</a>
+            <a href="#pricing" class="block px-3 py-2 text-gray-700 hover:text-brand-600 hover:bg-gray-50 rounded-md transition-colors duration-200">Tariffe</a>
+            <a href="#business" class="block px-3 py-2 text-gray-700 hover:text-brand-600 hover:bg-gray-50 rounded-md transition-colors duration-200">Business</a>
+            <a href="#about" class="block px-3 py-2 text-gray-700 hover:text-brand-600 hover:bg-gray-50 rounded-md transition-colors duration-200">Chi Siamo</a>
+            <a href="#contact" class="block px-3 py-2 text-gray-700 hover:text-brand-600 hover:bg-gray-50 rounded-md transition-colors duration-200">Contatti</a>
+            <div class="px-3 py-2">
+                <button onclick="openClientArea()" class="w-full bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200">
+                    Area Clienti
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section id="home" class="pt-16 bg-gradient-to-br from-gray-50 via-white to-brand-50 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-gradient-to-l from-brand-300 to-transparent rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-r from-accent-300 to-transparent rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <!-- Content -->
+            <div class="animate-slide-up">
+                <div class="inline-flex items-center space-x-2 bg-brand-100 text-brand-800 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                    <i data-feather="zap" class="w-4 h-4"></i>
+                    <span>Connettività Ultra-Veloce</span>
+                </div>
+
+                <h1 class="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
+                    Più <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-brand-800">DSL</span><br>
+                    <span class="text-2xl lg:text-3xl font-medium text-gray-600">100MB Plus</span><br>
+                    <span class="text-lg lg:text-xl font-normal text-gray-500">a 28,99€/mese per sempre</span>
+                </h1>
+
+                <p class="text-lg text-gray-600 mb-8 max-w-lg">
+                    Provider Internet specializzato in fibra ottica, VoIP, videosorveglianza e soluzioni avanzate per business e PA. Infrastruttura progettata per il futuro.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button class="bg-brand-600 hover:bg-brand-700 text-white px-8 py-3 rounded-xl font-semibold text-lg transition-all duration-200 hover:shadow-xl hover:shadow-brand-200 hover:-translate-y-1">
+                        Scopri le Offerte
+                    </button>
+                    <button class="border-2 border-gray-300 hover:border-brand-600 text-gray-700 hover:text-brand-600 px-8 py-3 rounded-xl font-semibold text-lg transition-all duration-200 hover:bg-brand-50">
+                        Contattaci
+                    </button>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-6 mt-12 pt-8 border-t border-gray-200">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-brand-600">24/7</div>
+                        <div class="text-sm text-gray-500">Supporto</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-brand-600">100%</div>
+                        <div class="text-sm text-gray-500">Fibra Ottica</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-brand-600">80%</div>
+                        <div class="text-sm text-gray-500">Energie Rinnovabili</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero Visual -->
+            <div class="relative animate-slide-in-right">
+                <div class="relative">
+                    <!-- Main Card -->
+                    <div class="bg-white rounded-2xl shadow-2xl shadow-brand-100 p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center">
+                                    <i data-feather="wifi" class="w-6 h-6 text-white"></i>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Connessione Attiva</div>
+                                    <div class="text-sm text-gray-500">100 Mbps Garantiti</div>
+                                </div>
+                            </div>
+                            <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Download</span>
+                                <span class="font-mono font-semibold text-brand-600">98.7 Mbps</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-brand-500 to-brand-600 h-2 rounded-full" style="width: 98%"></div>
+                            </div>
+
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Upload</span>
+                                <span class="font-mono font-semibold text-accent-600">45.2 Mbps</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-accent-400 to-accent-600 h-2 rounded-full" style="width: 85%"></div>
+                            </div>
+
+                            <div class="flex justify-between items-center pt-4 border-t border-gray-100">
+                                <span class="text-gray-600">Latency</span>
+                                <span class="font-mono font-semibold text-green-600">8ms</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating Elements -->
+                    <div class="absolute -top-6 -right-6 w-20 h-20 bg-gradient-to-br from-accent-400 to-accent-600 rounded-xl opacity-80 animate-float" style="animation-delay: 0.5s;"></div>
+                    <div class="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-brand-400 to-brand-600 rounded-lg opacity-60 animate-float" style="animation-delay: 1s;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section id="services" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+                I Nostri <span class="text-brand-600">Servizi</span>
+            </h2>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                Soluzioni complete per la connettività: dall'internet ultraveloce ai servizi VoIP,
+                dalla videosorveglianza ai circuiti dedicati per ogni esigenza.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Service 1 -->
+            <div class="group bg-white rounded-2xl p-8 border border-gray-100 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-50 transition-all duration-300 hover:-translate-y-2">
+                <div class="w-16 h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center mb-6 group-hover:shadow-lg group-hover:shadow-brand-200 transition-all duration-300">
+                    <i data-feather="globe" class="w-8 h-8 text-white"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Internet & Fibra</h3>
+                <p class="text-gray-600 mb-6">Connessioni fibra ottica ultraveloci fino a 1Gbps con latency ridotta e stabilità garantita 24/7.</p>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-brand-600 mr-2"></i>
+                        Fibra FTTH/FTTC
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-brand-600 mr-2"></i>
+                        IP Statici inclusi
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-brand-600 mr-2"></i>
+                        SLA garantito
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Service 2 -->
+            <div class="group bg-white rounded-2xl p-8 border border-gray-100 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-50 transition-all duration-300 hover:-translate-y-2">
+                <div class="w-16 h-16 bg-gradient-to-br from-accent-500 to-accent-700 rounded-2xl flex items-center justify-center mb-6 group-hover:shadow-lg group-hover:shadow-accent-200 transition-all duration-300">
+                    <i data-feather="phone-call" class="w-8 h-8 text-white"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">VoIP & Centralini</h3>
+                <p class="text-gray-600 mb-6">Sistemi telefonici cloud e on-premise con funzionalità avanzate per aziende di ogni dimensione.</p>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-accent-600 mr-2"></i>
+                        PBX Cloud & On-Site
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-accent-600 mr-2"></i>
+                        Numerazioni geografiche
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-accent-600 mr-2"></i>
+                        Call Center Solutions
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Service 3 -->
+            <div class="group bg-white rounded-2xl p-8 border border-gray-100 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-50 transition-all duration-300 hover:-translate-y-2">
+                <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center mb-6 group-hover:shadow-lg group-hover:shadow-green-200 transition-all duration-300">
+                    <i data-feather="video" class="w-8 h-8 text-white"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Videosorveglianza</h3>
+                <p class="text-gray-600 mb-6">Sistemi di videosorveglianza IP con accesso remoto, registrazione cloud e intelligenza artificiale.</p>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-green-600 mr-2"></i>
+                        Telecamere IP 4K
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-green-600 mr-2"></i>
+                        Cloud Recording
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-green-600 mr-2"></i>
+                        Analisi AI
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Service 4 -->
+            <div class="group bg-white rounded-2xl p-8 border border-gray-100 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-50 transition-all duration-300 hover:-translate-y-2">
+                <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center mb-6 group-hover:shadow-lg group-hover:shadow-purple-200 transition-all duration-300">
+                    <i data-feather="shield" class="w-8 h-8 text-white"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Sicurezza & VPN</h3>
+                <p class="text-gray-600 mb-6">Protezione avanzata con firewall di nuova generazione, VPN dedicate e monitoraggio continuo.</p>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-purple-600 mr-2"></i>
+                        Firewall Next-Gen
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-purple-600 mr-2"></i>
+                        VPN Site-to-Site
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-purple-600 mr-2"></i>
+                        Monitoring 24/7
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Service 5 -->
+            <div class="group bg-white rounded-2xl p-8 border border-gray-100 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-50 transition-all duration-300 hover:-translate-y-2">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center mb-6 group-hover:shadow-lg group-hover:shadow-red-200 transition-all duration-300">
+                    <i data-feather="radio" class="w-8 h-8 text-white"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">FWA & Wireless</h3>
+                <p class="text-gray-600 mb-6">Soluzioni Fixed Wireless Access per aree non raggiunte da fibra ottica con prestazioni elevate.</p>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-red-600 mr-2"></i>
+                        Tecnologia 5G/LTE
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-red-600 mr-2"></i>
+                        Copertura estesa
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-red-600 mr-2"></i>
+                        Installazione rapida
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Service 6 -->
+            <div class="group bg-white rounded-2xl p-8 border border-gray-100 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-50 transition-all duration-300 hover:-translate-y-2">
+                <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl flex items-center justify-center mb-6 group-hover:shadow-lg group-hover:shadow-indigo-200 transition-all duration-300">
+                    <i data-feather="server" class="w-8 h-8 text-white"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Circuiti Dedicati</h3>
+                <p class="text-gray-600 mb-6">Collegamenti punto-punto dedicati con banda garantita per applicazioni mission-critical.</p>
+                <ul class="space-y-2 text-sm text-gray-500">
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-indigo-600 mr-2"></i>
+                        Banda dedicata
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-indigo-600 mr-2"></i>
+                        SLA 99.9%
+                    </li>
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-4 h-4 text-indigo-600 mr-2"></i>
+                        Ridondanza inclusa
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section id="pricing" class="py-20 bg-gradient-to-br from-gray-50 to-brand-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+                Scegli la <span class="text-brand-600">Tua Offerta</span>
+            </h2>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                Piani trasparenti e competitivi per privati e aziende. Nessun costo nascosto,
+                solo connettività di qualità al giusto prezzo.
+            </p>
+        </div>
+
+        @if (!empty($products))
+        @php
+            $hasPrivate  = collect($products)->contains(fn($p) => ($p['target_audience'] ?? null) === 'private');
+            $hasBusiness = collect($products)->contains(fn($p) => ($p['target_audience'] ?? null) === 'business');
+            $showTabs    = $hasPrivate && $hasBusiness;
+        @endphp
+
+        {{-- Tab switcher (solo se ci sono entrambe le audience) --}}
+        @if ($showTabs)
+        <div class="flex justify-center mb-12">
+            <div class="inline-flex bg-gray-100 rounded-2xl p-1.5 gap-1">
+                <button id="tab-private"  onclick="switchAudience('private')"
+                    class="audience-tab px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 bg-white text-brand-700 shadow-sm">
+                    <span class="flex items-center space-x-2">
+                        <i data-feather="home" class="w-4 h-4"></i>
+                        <span>Privati</span>
+                    </span>
+                </button>
+                <button id="tab-business" onclick="switchAudience('business')"
+                    class="audience-tab px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 text-gray-500 hover:text-gray-700">
+                    <span class="flex items-center space-x-2">
+                        <i data-feather="briefcase" class="w-4 h-4"></i>
+                        <span>Aziende</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+        @endif
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-start">
+            @foreach ($products as $product)
+            @php
+                $popular   = !empty($product['is_popular']);
+                $audience  = $product['target_audience'] ?? null;
+                $price     = number_format($product['public_price'] ?? 0, 2, ',', '.');
+                $priceParts = explode(',', $price);
+                $isBusiness = $audience === 'business';
+                $features  = [];
+                if (!empty($product['download_speed'])) $features[] = 'Download ' . $product['download_speed'];
+                if (!empty($product['upload_speed']))   $features[] = 'Upload '   . $product['upload_speed'];
+                if (!empty($product['what_is_included'])) {
+                    foreach (preg_split('/[,\n]+/', $product['what_is_included']) as $f) {
+                        $f = trim($f);
+                        if ($f !== '') $features[] = $f;
+                    }
+                }
+                // data-audience: null products are always visible
+                $dataAttr = $audience ? "data-audience=\"{$audience}\"" : '';
+            @endphp
+
+            @if ($popular)
+            {{-- Featured card --}}
+            <div {!! $dataAttr !!} class="product-card bg-gradient-to-br {{ $isBusiness ? 'from-gray-700 to-gray-900' : 'from-brand-500 to-brand-700' }} rounded-3xl p-8 text-white relative transform scale-105 shadow-2xl {{ $isBusiness ? 'shadow-gray-300' : 'shadow-brand-200' }}">
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 {{ $isBusiness ? 'bg-gray-200 text-gray-800' : 'bg-accent-400 text-accent-900' }} px-4 py-1 rounded-full text-sm font-semibold whitespace-nowrap">
+                    Più Popolare
+                </div>
+                @if ($audience)
+                <div class="flex justify-end mb-2">
+                    <span class="inline-flex items-center space-x-1 text-[11px] font-semibold px-2.5 py-1 rounded-full {{ $isBusiness ? 'bg-white/15 text-white' : 'bg-white/20 text-white' }}">
+                        <i data-feather="{{ $isBusiness ? 'briefcase' : 'home' }}" class="w-3 h-3"></i>
+                        <span>{{ $isBusiness ? 'Business' : 'Privati' }}</span>
+                    </span>
+                </div>
+                @endif
+                <div class="text-center mb-8">
+                    <h3 class="text-xl font-semibold mb-2">{{ $product['offer_title'] ?? $product['label'] }}</h3>
+                    <div class="flex items-baseline justify-center mb-4">
+                        <span class="text-4xl font-bold">{{ $priceParts[0] }}</span>
+                        <span class="text-lg opacity-80 ml-1">,{{ $priceParts[1] ?? '00' }}€/mese</span>
+                    </div>
+                    @if (!empty($product['short_description']))
+                    <p class="opacity-90 text-sm">{{ $product['short_description'] }}</p>
+                    @endif
+                </div>
+                <ul class="space-y-3 mb-8">
+                    @foreach ($features as $feat)
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-5 h-5 {{ $isBusiness ? 'text-gray-300' : 'text-accent-300' }} mr-3 flex-shrink-0"></i>
+                        <span class="text-sm">{{ $feat }}</span>
+                    </li>
+                    @endforeach
+                </ul>
+                <button onclick="openClientArea()" class="w-full {{ $isBusiness ? 'bg-white text-gray-800 hover:bg-gray-100' : 'bg-white text-brand-700 hover:bg-gray-100' }} font-semibold py-3 rounded-xl transition-all duration-200">
+                    {{ $product['cta_label'] ?? 'Scegli' }}
+                </button>
+            </div>
+
+            @else
+            {{-- Standard card --}}
+            <div {!! $dataAttr !!} class="product-card bg-white rounded-3xl p-8 border {{ $isBusiness ? 'border-gray-300 hover:border-gray-400' : 'border-gray-200 hover:border-brand-200' }} hover:shadow-xl transition-all duration-300">
+                @if ($audience)
+                <div class="flex justify-end mb-2">
+                    <span class="inline-flex items-center space-x-1 text-[11px] font-semibold px-2.5 py-1 rounded-full {{ $isBusiness ? 'bg-gray-100 text-gray-600' : 'bg-brand-50 text-brand-700' }}">
+                        <i data-feather="{{ $isBusiness ? 'briefcase' : 'home' }}" class="w-3 h-3"></i>
+                        <span>{{ $isBusiness ? 'Business' : 'Privati' }}</span>
+                    </span>
+                </div>
+                @endif
+                <div class="text-center mb-8">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ $product['offer_title'] ?? $product['label'] }}</h3>
+                    <div class="flex items-baseline justify-center mb-4">
+                        <span class="text-4xl font-bold text-gray-900">{{ $priceParts[0] }}</span>
+                        <span class="text-lg text-gray-500 ml-1">,{{ $priceParts[1] ?? '00' }}€/mese</span>
+                    </div>
+                    @if (!empty($product['short_description']))
+                    <p class="text-gray-600 text-sm">{{ $product['short_description'] }}</p>
+                    @endif
+                </div>
+                <ul class="space-y-3 mb-8">
+                    @foreach ($features as $feat)
+                    <li class="flex items-center">
+                        <i data-feather="check" class="w-5 h-5 {{ $isBusiness ? 'text-gray-500' : 'text-brand-600' }} mr-3 flex-shrink-0"></i>
+                        <span class="text-gray-700 text-sm">{{ $feat }}</span>
+                    </li>
+                    @endforeach
+                </ul>
+                <button onclick="openClientArea()" class="w-full {{ $isBusiness ? 'bg-gray-800 hover:bg-gray-900 text-white' : 'bg-gray-100 hover:bg-brand-600 hover:text-white text-gray-700' }} font-semibold py-3 rounded-xl transition-all duration-200">
+                    {{ $product['cta_label'] ?? 'Scegli' }}
+                </button>
+            </div>
+            @endif
+
+            @endforeach
+        </div>
+        @endif
+    </div>
+</section>
+
+<!-- Business Section -->
+<section id="business" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <!-- Content -->
+            <div>
+                <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
+                    Soluzioni <span class="text-brand-600">Business</span> & P.A.
+                </h2>
+                <p class="text-lg text-gray-600 mb-8">
+                    Puntiamo alla continuità e qualità del servizio offerto ai nostri clienti Business,
+                    con operatori dedicati e formati per supportare il cliente in qualsiasi esigenza
+                    nel minor tempo possibile.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                    <div class="text-center p-6 bg-gray-50 rounded-2xl">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <i data-feather="shield-check" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Security</h3>
+                        <p class="text-sm text-gray-600">Firewall di ultima generazione aggiornati ogni 24h</p>
+                    </div>
+
+                    <div class="text-center p-6 bg-gray-50 rounded-2xl">
+                        <div class="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <i data-feather="headphones" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Support</h3>
+                        <p class="text-sm text-gray-600">Supporto attivo 24/7 eseguito da tecnici aziendali</p>
+                    </div>
+
+                    <div class="text-center p-6 bg-gray-50 rounded-2xl">
+                        <div class="w-12 h-12 bg-gradient-to-br from-accent-500 to-accent-700 rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <i data-feather="leaf" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Eco-Friendly</h3>
+                        <p class="text-sm text-gray-600">80% delle nostre infrastrutture alimentate da energie rinnovabili</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:shadow-lg">
+                        Maggiori Dettagli
+                    </button>
+                    <button class="border-2 border-brand-600 text-brand-600 hover:bg-brand-600 hover:text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200">
+                        Richiedi Preventivo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Visual -->
+            <div class="relative">
+                <div class="bg-gradient-to-br from-brand-50 to-brand-100 rounded-3xl p-8">
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Feature Cards -->
+                        <div class="bg-white rounded-2xl p-6 shadow-lg">
+                            <div class="flex items-center space-x-3 mb-4">
+                                <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
+                                    <i data-feather="zap" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <span class="font-semibold">Performance</span>
+                            </div>
+                            <div class="text-2xl font-bold text-brand-600">99.9%</div>
+                            <div class="text-sm text-gray-500">Uptime garantito</div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-6 shadow-lg">
+                            <div class="flex items-center space-x-3 mb-4">
+                                <div class="w-8 h-8 bg-accent-600 rounded-lg flex items-center justify-center">
+                                    <i data-feather="users" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <span class="font-semibold">Clienti</span>
+                            </div>
+                            <div class="text-2xl font-bold text-accent-600">500+</div>
+                            <div class="text-sm text-gray-500">Aziende servite</div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-6 shadow-lg">
+                            <div class="flex items-center space-x-3 mb-4">
+                                <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                                    <i data-feather="clock" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <span class="font-semibold">Risposta</span>
+                            </div>
+                            <div class="text-2xl font-bold text-green-600">< 2h</div>
+                            <div class="text-sm text-gray-500">Tempo di intervento</div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-6 shadow-lg">
+                            <div class="flex items-center space-x-3 mb-4">
+                                <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                                    <i data-feather="award" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <span class="font-semibold">Esperienza</span>
+                            </div>
+                            <div class="text-2xl font-bold text-purple-600">15+</div>
+                            <div class="text-sm text-gray-500">Anni di attività</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Partners Section -->
+<section class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">I Nostri Partner Tecnologici</h2>
+            <p class="text-gray-600">Collaboriamo con i migliori brand del settore per garantire qualità e innovazione</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 items-center justify-items-center opacity-70">
+            <!-- Partner logos as placeholders -->
+            <div class="bg-white rounded-2xl p-6 w-full h-20 flex items-center justify-center shadow-sm">
+                <span class="text-gray-400 font-mono text-sm">RIPE NCC</span>
+            </div>
+            <div class="bg-white rounded-2xl p-6 w-full h-20 flex items-center justify-center shadow-sm">
+                <span class="text-gray-400 font-mono text-sm">MikroTik</span>
+            </div>
+            <div class="bg-white rounded-2xl p-6 w-full h-20 flex items-center justify-center shadow-sm">
+                <span class="text-gray-400 font-mono text-sm">Ubiquiti</span>
+            </div>
+            <div class="bg-white rounded-2xl p-6 w-full h-20 flex items-center justify-center shadow-sm">
+                <span class="text-gray-400 font-mono text-sm">Mimosa</span>
+            </div>
+            <div class="bg-white rounded-2xl p-6 w-full h-20 flex items-center justify-center shadow-sm">
+                <span class="text-gray-400 font-mono text-sm">Dahua</span>
+            </div>
+            <div class="bg-white rounded-2xl p-6 w-full h-20 flex items-center justify-center shadow-sm">
+                <span class="text-gray-400 font-mono text-sm">Hikvision</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section id="about" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+                Chi <span class="text-brand-600">Siamo</span>
+            </h2>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                Più DSL è un'azienda che ha come priorità qualità e servizio al cliente,
+                seguendo il cliente passo passo per progettare il miglior impianto internet e wireless.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Value 1 -->
+            <div class="text-center">
+                <div class="w-20 h-20 bg-gradient-to-br from-brand-500 to-brand-700 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <i data-feather="target" class="w-10 h-10 text-white"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Super Easy</h3>
+                <p class="text-gray-600">
+                    Semplifichiamo il tutto per un approccio deciso e trasparente con il cliente.
+                    Nessun tecnicismo inutile, solo soluzioni chiare.
+                </p>
+            </div>
+
+            <!-- Value 2 -->
+            <div class="text-center">
+                <div class="w-20 h-20 bg-gradient-to-br from-accent-500 to-accent-700 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <i data-feather="zap" class="w-10 h-10 text-white"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Super Fast</h3>
+                <p class="text-gray-600">
+                    Il nostro Team è attivo 24h su 24 e 7 giorni su 7 per risolvere problemi
+                    prima possibile, dentro e fuori l'orario lavorativo.
+                </p>
+            </div>
+
+            <!-- Value 3 -->
+            <div class="text-center">
+                <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-green-700 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <i data-feather="users" class="w-10 h-10 text-white"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Passo Passo</h3>
+                <p class="text-gray-600">
+                    Seguiamo ogni cliente passo passo, aiutandolo a progettare il miglior impianto
+                    internet e wireless adatto alle sue specifiche esigenze.
+                </p>
+            </div>
+        </div>
+
+        <!-- Smart Working Section -->
+        <div class="mt-20 bg-gradient-to-r from-brand-50 to-accent-50 rounded-3xl p-12">
+            <div class="text-center mb-12">
+                <h3 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
+                    Progettati per il <span class="text-brand-600">Futuro</span>
+                </h3>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    Abbiamo progettato la nostra infrastruttura non limitandoci al presente,
+                    ma pensando ai servizi di domani.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <i data-feather="home" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Smart Working</h4>
+                    <p class="text-gray-600">Connettività ottimizzata per il lavoro remoto</p>
+                </div>
+
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-accent-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <i data-feather="play" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Streaming Live</h4>
+                    <p class="text-gray-600">Banda dedicata per streaming in alta qualità</p>
+                </div>
+
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <i data-feather="video" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-2">Videocall</h4>
+                    <p class="text-gray-600">Latenza ridotta per meeting professionali</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="py-20 bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+            <!-- Contact Info -->
+            <div>
+                <h2 class="text-3xl lg:text-4xl font-bold mb-6">
+                    Mettiti in <span class="text-brand-400">Contatto</span>
+                </h2>
+                <p class="text-lg text-gray-300 mb-8">
+                    Hai domande sui nostri servizi? Il nostro team è pronto ad aiutarti
+                    a trovare la soluzione perfetta per le tue esigenze di connettività.
+                </p>
+
+                <div class="space-y-6">
+                    <!-- Phone -->
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-brand-600 rounded-xl flex items-center justify-center">
+                            <i data-feather="phone" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Telefono</div>
+                            <a href="tel:+3908231800100" class="text-brand-400 hover:text-brand-300 transition-colors duration-200">
+                                +39 0823 1800100
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-accent-600 rounded-xl flex items-center justify-center">
+                            <i data-feather="mail" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Email</div>
+                            <a href="mailto:info@piudsl.it" class="text-accent-400 hover:text-accent-300 transition-colors duration-200">
+                                info@piudsl.it
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Address -->
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
+                            <i data-feather="map-pin" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Sede Operativa</div>
+                            <div class="text-gray-300">
+                                Via Nazionale Appia 316/C<br>
+                                81028 Santa Maria a Vico (CE)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hours -->
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
+                            <i data-feather="clock" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Supporto</div>
+                            <div class="text-gray-300">24/7 - Sempre disponibili</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social -->
+                <div class="mt-8 pt-8 border-t border-gray-700">
+                    <div class="font-semibold mb-4">Seguici</div>
+                    <a href="#" class="inline-flex items-center justify-center w-10 h-10 bg-gray-700 hover:bg-brand-600 rounded-lg transition-colors duration-200">
+                        <i data-feather="facebook" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Contact Form -->
+            <div class="bg-gray-800 rounded-3xl p-8">
+                <h3 class="text-2xl font-bold mb-6">Richiedi Informazioni</h3>
+
+                <form class="space-y-6" onsubmit="handleContactForm(event)">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Nome</label>
+                            <input type="text" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="Il tuo nome" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Cognome</label>
+                            <input type="text" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="Il tuo cognome" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                        <input type="email" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="la-tua-email@esempio.com" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Telefono</label>
+                        <input type="tel" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="+39 123 456 7890">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Tipo di Richiesta</label>
+                        <select class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" required>
+                            <option value="">Seleziona...</option>
+                            <option value="info">Informazioni generali</option>
+                            <option value="pricing">Tariffe e prezzi</option>
+                            <option value="business">Soluzioni business</option>
+                            <option value="support">Supporto tecnico</option>
+                            <option value="other">Altro</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Messaggio</label>
+                        <textarea rows="4" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200 resize-none" placeholder="Descrivi la tua richiesta..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-brand-500/20">
+                        Invia Richiesta
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-gray-900 text-white py-12 border-t border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <!-- Logo & Description -->
+            <div class="md:col-span-2">
+                <div class="flex items-center space-x-2 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">P+</span>
+                    </div>
+                    <span class="text-xl font-bold">
+                            Più<span class="text-brand-400">DSL</span>
+                        </span>
+                </div>
+                <p class="text-gray-400 mb-4 max-w-md">
+                    Provider Internet specializzato in connettività fibra ottica, servizi VoIP e soluzioni avanzate per business e PA.
+                </p>
+                <div class="text-sm text-gray-500">
+                    <div>P.IVA 04431850611</div>
+                    <div class="mt-2">Copyright © 2024 Più DSL - Tutti i diritti riservati</div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div>
+                <h3 class="font-semibold text-white mb-4">Esplora</h3>
+                <ul class="space-y-2 text-gray-400">
+                    <li><a href="#home" class="hover:text-brand-400 transition-colors duration-200">Home</a></li>
+                    <li><a href="#services" class="hover:text-brand-400 transition-colors duration-200">Servizi</a></li>
+                    <li><a href="#pricing" class="hover:text-brand-400 transition-colors duration-200">Tariffe</a></li>
+                    <li><a href="#business" class="hover:text-brand-400 transition-colors duration-200">Business</a></li>
+                    <li><a href="#about" class="hover:text-brand-400 transition-colors duration-200">Chi Siamo</a></li>
+                    <li><a href="#contact" class="hover:text-brand-400 transition-colors duration-200">Contatti</a></li>
+                </ul>
+            </div>
+
+            <!-- Legal -->
+            <div>
+                <h3 class="font-semibold text-white mb-4">Legale</h3>
+                <ul class="space-y-2 text-gray-400">
+                    <li><a href="#" class="hover:text-brand-400 transition-colors duration-200">Privacy Policy</a></li>
+                    <li><a href="#" class="hover:text-brand-400 transition-colors duration-200">Termini di Servizio</a></li>
+                    <li><a href="#" class="hover:text-brand-400 transition-colors duration-200">Cookie Policy</a></li>
+                    <li><a href="#" class="hover:text-brand-400 transition-colors duration-200">Condizioni Contrattuali</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Client Area Modal -->
+<div id="client-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeClientArea()"></div>
+
+        <div class="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+            <!-- Close Button -->
+            <button onclick="closeClientArea()" class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                <i data-feather="x" class="w-6 h-6"></i>
+            </button>
+
+            <!-- Login Form -->
+            <div id="login-form" class="space-y-6">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <i data-feather="user" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">Area Clienti</h2>
+                    <p class="text-gray-600">Accedi al tuo account per gestire i servizi</p>
+                </div>
+
+                <form onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input id="login-email" type="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="cliente@esempio.com" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input id="login-password" type="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="••••••••" required>
+                    </div>
+
+                    <div id="login-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"></div>
+
+                    <button id="login-btn" type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Accedi
+                    </button>
+                </form>
+
+                <div class="text-center text-sm text-gray-600">
+                    Non hai ancora un account?
+                    <button onclick="showRegisterForm()" class="text-brand-600 hover:text-brand-700 font-medium">Registrati</button>
+                </div>
+            </div>
+
+            <!-- Post-login message for user role -->
+            <div id="client-dashboard" class="hidden space-y-6">
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-feather="check-circle" class="w-8 h-8 text-green-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">OK</h2>
+                    <p class="text-gray-500 text-sm">Accesso effettuato.</p>
+                </div>
+                <button onclick="logout()" class="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-3 rounded-lg transition-colors duration-200">
+                    Esci
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cookie Banner -->
+<div id="cookie-banner" class="fixed bottom-4 left-4 right-4 bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 z-40 max-w-md mx-auto">
+    <div class="flex items-start space-x-4">
+        <div class="flex-shrink-0">
+            <i data-feather="info" class="w-6 h-6 text-brand-600"></i>
+        </div>
+        <div class="flex-1">
+            <p class="text-sm text-gray-600 mb-4">
+                Utilizziamo cookie per migliorare la tua esperienza sul nostro sito.
+                Continuando la navigazione accetti la nostra
+                <a href="#" class="text-brand-600 hover:underline">Cookie Policy</a>.
+            </p>
+            <div class="flex space-x-3">
+                <button onclick="acceptCookies()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                    Accetto
+                </button>
+                <button onclick="rejectCookies()" class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                    Solo Essenziali
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Feather Icons
+    feather.replace();
+
+    // Navigation scroll effect
+    window.addEventListener('scroll', function() {
+        const navbar = document.getElementById('navbar');
+        if (window.scrollY > 50) {
+            navbar.classList.add('shadow-lg');
+            navbar.classList.remove('border-b');
+        } else {
+            navbar.classList.remove('shadow-lg');
+            navbar.classList.add('border-b');
+        }
+    });
+
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Mobile menu toggle
+    function toggleMobileMenu() {
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenu.classList.toggle('hidden');
+    }
+
+    // Client area functions
+    function openClientArea() {
+        document.getElementById('client-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeClientArea() {
+        document.getElementById('client-modal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        document.getElementById('login-form').classList.remove('hidden');
+        document.getElementById('client-dashboard').classList.add('hidden');
+        document.getElementById('login-error').classList.add('hidden');
+    }
+
+    async function handleLogin(event) {
+        event.preventDefault();
+
+        const email    = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const btn      = document.getElementById('login-btn');
+        const errorEl  = document.getElementById('login-error');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        btn.disabled = true;
+        btn.textContent = 'Accesso in corso...';
+        errorEl.classList.add('hidden');
+
+        try {
+            const res = await fetch('/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await res.json();
+
+            if (!data.success) {
+                errorEl.textContent = data.message || 'Credenziali non valide.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            if (data.role === 'technician') {
+                window.location.href = data.redirect;
+                return;
+            }
+
+            // user role: show OK
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('client-dashboard').classList.remove('hidden');
+            feather.replace();
+
+        } catch (e) {
+            errorEl.textContent = 'Errore di connessione. Riprova.';
+            errorEl.classList.remove('hidden');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Accedi';
+        }
+    }
+
+    async function logout() {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        await fetch('/auth/logout', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken },
+        });
+        document.getElementById('login-form').classList.remove('hidden');
+        document.getElementById('client-dashboard').classList.add('hidden');
+    }
+
+    // Pricing audience tab switcher
+    function switchAudience(audience) {
+        document.querySelectorAll('.product-card').forEach(card => {
+            const cardAudience = card.dataset.audience;
+            // null audience cards are always visible
+            card.style.display = (!cardAudience || cardAudience === audience) ? '' : 'none';
+        });
+
+        document.getElementById('tab-private').className  =
+            'audience-tab px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ' +
+            (audience === 'private'
+                ? 'bg-white text-brand-700 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700');
+
+        document.getElementById('tab-business').className =
+            'audience-tab px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ' +
+            (audience === 'business'
+                ? 'bg-white text-brand-700 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700');
+    }
+
+    // Contact form handler
+    function handleContactForm(event) {
+        event.preventDefault();
+        const button = event.target.querySelector('button[type="submit"]');
+        const originalText = button.textContent;
+
+        button.textContent = 'Invio in corso...';
+        button.disabled = true;
+
+        // Simulate form submission
+        setTimeout(() => {
+            alert('Grazie per la tua richiesta! Ti contatteremo presto.');
+            event.target.reset();
+            button.textContent = originalText;
+            button.disabled = false;
+        }, 2000);
+    }
+
+    // Cookie banner functions
+    function acceptCookies() {
+        document.getElementById('cookie-banner').style.display = 'none';
+        localStorage.setItem('cookieConsent', 'accepted');
+    }
+
+    function rejectCookies() {
+        document.getElementById('cookie-banner').style.display = 'none';
+        localStorage.setItem('cookieConsent', 'essential');
+    }
+
+    // Check if cookie consent already given
+    if (localStorage.getItem('cookieConsent')) {
+        document.getElementById('cookie-banner').style.display = 'none';
+    }
+
+    // Animation on scroll (basic intersection observer)
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    // Observe elements for animation
+    document.addEventListener('DOMContentLoaded', function() {
+        const animatedElements = document.querySelectorAll('.animate-slide-up, .animate-slide-in-right');
+        animatedElements.forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.6s ease-out';
+            observer.observe(el);
+        });
+
+        // Show cookie banner after 2 seconds
+        if (!localStorage.getItem('cookieConsent')) {
+            setTimeout(() => {
+                const banner = document.getElementById('cookie-banner');
+                banner.style.animation = 'slideUp 0.5s ease-out';
+            }, 2000);
+        }
+    });
+</script>
+</body>
+</html>

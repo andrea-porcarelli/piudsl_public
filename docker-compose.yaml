@@ -1,0 +1,27 @@
+services:
+  piudsl_app_panel:
+    restart: unless-stopped
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    shm_size: '1gb'
+    volumes:
+      - ./:/var/www
+    working_dir: /var/www
+    command: 'php artisan serve --host=0.0.0.0'
+    ports:
+      - '80:8000'
+    depends_on:
+      - redis
+    networks:
+      - piudsl_app
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save "" --appendonly no
+    networks:
+      - piudsl_app
+
+networks:
+  piudsl_app:
