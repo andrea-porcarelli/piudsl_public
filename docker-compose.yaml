@@ -47,5 +47,9 @@ volumes:
   caddy_data:
   caddy_config:
 
+configs:
+  caddyfile:
+    file: ./Caddyfile
+
 networks:
   piudsl_app:
