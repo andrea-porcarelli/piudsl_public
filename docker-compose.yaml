@@ -7,9 +7,11 @@ services:
       - '443:443'
       - '443:443/udp'
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
     environment:
       CADDY_DOMAIN: ${CADDY_DOMAIN}
     depends_on:

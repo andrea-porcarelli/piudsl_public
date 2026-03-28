@@ -1,0 +1,3 @@
+{$CADDY_DOMAIN} {
+    reverse_proxy piudsl_app_panel:8000
+}
