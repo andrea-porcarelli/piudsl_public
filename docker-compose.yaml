@@ -4,8 +4,8 @@ services:
     restart: unless-stopped
     ports:
       - '80:80'
-#      - '443:443'
-#      - '443:443/udp'
+      - '443:443'
+      - '443:443/udp'
     volumes:
       - caddy_data:/data
       - caddy_config:/config

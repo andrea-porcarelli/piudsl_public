@@ -1,3 +1,4 @@
-http://{$CADDY_DOMAIN} {
+https://172.100.1.14 {
+    tls internal
     reverse_proxy piudsl_app_panel:8000
 }
