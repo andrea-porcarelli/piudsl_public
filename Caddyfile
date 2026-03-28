@@ -1,4 +1,4 @@
 https://172.100.1.14 {
-    tls internal
+    tls /certs/cert.pem /certs/key.pem
     reverse_proxy piudsl_app_panel:8000
 }
