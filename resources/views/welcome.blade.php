@@ -141,6 +141,20 @@
     </div>
 </nav>
 
+<!-- Notice Banner -->
+<div id="notice-banner" role="alert" aria-live="polite"
+     style="display:none"
+     class="fixed top-16 left-0 right-0 z-40 transition-all duration-500">
+    <div id="notice-inner" class="flex items-start gap-3 px-4 py-3 shadow-lg border-b-2 max-w-none">
+        <i id="notice-icon" data-feather="alert-triangle" class="w-5 h-5 mt-0.5 shrink-0"></i>
+        <p id="notice-message" class="flex-1 text-sm font-medium leading-snug"></p>
+        <button onclick="dismissNotice()" aria-label="Chiudi avviso"
+                class="shrink-0 p-1 rounded-md opacity-70 hover:opacity-100 transition-opacity duration-200">
+            <i data-feather="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+</div>
+
 <!-- Hero Section -->
 <section id="home" class="pt-16 bg-gradient-to-br from-gray-50 via-white to-brand-50 relative overflow-hidden">
     <!-- Background Pattern -->
@@ -1228,6 +1242,76 @@
             }, 2000);
         }
     });
+
+    // ── Notice Banner ────────────────────────────────────────────────────────
+    const NOTICE_POLL_MS = 60_000; // polling ogni 60 secondi
+    let _noticePollTimer = null;
+
+    const noticeStyles = {
+        warning: {
+            bg: 'bg-amber-50',  border: 'border-amber-400',
+            text: 'text-amber-900', icon: 'alert-triangle',
+        },
+        danger: {
+            bg: 'bg-red-50', border: 'border-red-500',
+            text: 'text-red-900', icon: 'alert-octagon',
+        },
+        info: {
+            bg: 'bg-brand-50', border: 'border-brand-400',
+            text: 'text-brand-900', icon: 'info',
+        },
+    };
+
+    async function fetchNotice() {
+        try {
+            const res = await fetch('/api/notice', { cache: 'no-store' });
+            if (!res.ok) return;
+            const data = await res.json();
+            renderNotice(data.notice);
+        } catch (_) { /* rete non disponibile, silenzioso */ }
+    }
+
+    function renderNotice(notice) {
+        const banner  = document.getElementById('notice-banner');
+        const inner   = document.getElementById('notice-inner');
+        const msgEl   = document.getElementById('notice-message');
+        const iconEl  = document.getElementById('notice-icon');
+
+        if (!notice || !notice.message) {
+            banner.style.display = 'none';
+            return;
+        }
+
+        // Se l'utente ha già chiuso questo esatto avviso, non mostrarlo
+        const dismissedKey = 'notice_dismissed_' + btoa(unescape(encodeURIComponent(notice.message + (notice.updated_at || '')))).slice(0, 24);
+        if (sessionStorage.getItem(dismissedKey)) return;
+
+        const style = noticeStyles[notice.type] || noticeStyles.warning;
+
+        // Applica stili dinamici
+        inner.className = `flex items-start gap-3 px-4 py-3 shadow-lg border-b-2 max-w-none ${style.bg} ${style.border} ${style.text}`;
+        iconEl.setAttribute('data-feather', style.icon);
+        msgEl.textContent = notice.message;
+
+        banner.style.display = 'block';
+        banner.dataset.dismissKey = dismissedKey;
+
+        // Ricrea le icone feather per il nuovo attributo
+        if (window.feather) feather.replace();
+    }
+
+    function dismissNotice() {
+        const banner = document.getElementById('notice-banner');
+        if (banner.dataset.dismissKey) {
+            sessionStorage.setItem(banner.dataset.dismissKey, '1');
+        }
+        banner.style.display = 'none';
+    }
+
+    // Prima chiamata immediata, poi polling
+    fetchNotice();
+    _noticePollTimer = setInterval(fetchNotice, NOTICE_POLL_MS);
+    // ─────────────────────────────────────────────────────────────────────────
 </script>
 </body>
 </html>
