@@ -656,10 +656,6 @@ async function loadInvoices() {
                         <span class="underline underline-offset-2">Avvia itinerario</span>
                     </a>` : ''}
 
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500">Importo</span>
-                        <span class="text-sm font-bold text-gray-800">€ ${Number(inv.amount).toFixed(2)}</span>
-                    </div>
 
                     ${inv.notes ? `<p class="text-xs text-gray-400 mt-2 italic">${inv.notes}</p>` : ''}
 
