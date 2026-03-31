@@ -617,6 +617,13 @@ async function loadInvoices() {
                 ? (invoiceCoords ? `${invoiceCoords.lat},${invoiceCoords.lng}` : null)
                 : (data[i - 1].coordinates || null);
 
+            const wazeUrl = (() => {
+                if (!inv.coordinates) return null;
+                const [lat, lng] = inv.coordinates.split(',').map(s => s.trim());
+                if (!lat || !lng) return null;
+                return `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+            })();
+
             const directionsUrl = (() => {
                 if (!inv.coordinates) return null;
                 const dest = encodeURIComponent(inv.coordinates);
@@ -685,13 +692,22 @@ async function loadInvoices() {
                         <i data-feather="map-pin" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-gray-400"></i>
                         <span>${inv.full_address ?? inv.coordinates}</span>
                     </div>` : ''}
-                    ${directionsUrl ? `
-                    <a href="${directionsUrl}" target="_blank" rel="noopener"
-                        onclick="handleNavigation(event, '${directionsUrl}', '${encodeURIComponent(inv.coordinates)}')"
-                        class="mb-3 flex items-center space-x-1.5 text-xs text-brand-600 font-medium active:opacity-70">
-                        <i data-feather="navigation" class="w-3.5 h-3.5 flex-shrink-0"></i>
-                        <span class="underline underline-offset-2">Avvia itinerario</span>
-                    </a>` : ''}
+                    ${(directionsUrl || wazeUrl) ? `
+                    <div class="mb-3 flex items-center gap-4">
+                        ${directionsUrl ? `
+                        <a href="${directionsUrl}" target="_blank" rel="noopener"
+                            onclick="handleNavigation(event, '${directionsUrl}', '${encodeURIComponent(inv.coordinates)}')"
+                            class="flex items-center space-x-1.5 text-xs text-brand-600 font-medium active:opacity-70">
+                            <i data-feather="navigation" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                            <span class="underline underline-offset-2">Google Maps</span>
+                        </a>` : ''}
+                        ${wazeUrl ? `
+                        <a href="${wazeUrl}" target="_blank" rel="noopener"
+                            class="flex items-center space-x-1.5 text-xs text-blue-500 font-medium active:opacity-70">
+                            <i data-feather="navigation" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                            <span class="underline underline-offset-2">Waze</span>
+                        </a>` : ''}
+                    </div>` : ''}
 
 
                     ${inv.notes ? `<p class="text-xs text-gray-400 mt-2 italic">${inv.notes}</p>` : ''}
