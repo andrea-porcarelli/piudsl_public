@@ -322,6 +322,19 @@ function showState(prefix, state) {
     });
 }
 
+function handleNavigation(event, appUrl, encodedCoords) {
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (!isIos) return; // Android e desktop seguono href normalmente
+
+    // Su iOS: prova ad aprire Google Maps app, fallback su Apple Maps
+    event.preventDefault();
+    const dest = decodeURIComponent(encodedCoords);
+    const fallback = `maps://?daddr=${encodeURIComponent(dest)}&dirflg=d`;
+    const timeout = setTimeout(() => { window.location.href = fallback; }, 1500);
+    window.location.href = appUrl;
+    window.addEventListener('blur', () => clearTimeout(timeout), { once: true });
+}
+
 function formatDate(dateStr, timeStr) {
     if (!dateStr) return '—';
     const d = new Date(dateStr + (timeStr ? 'T' + timeStr : ''));
@@ -604,9 +617,29 @@ async function loadInvoices() {
                 ? (invoiceCoords ? `${invoiceCoords.lat},${invoiceCoords.lng}` : null)
                 : (data[i - 1].coordinates || null);
 
-            const directionsUrl = (inv.coordinates && prevCoords)
-                ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(prevCoords)}&destination=${encodeURIComponent(inv.coordinates)}&travelmode=driving`
-                : null;
+            const directionsUrl = (() => {
+                if (!inv.coordinates) return null;
+                const dest = encodeURIComponent(inv.coordinates);
+                const origin = prevCoords ? encodeURIComponent(prevCoords) : null;
+                const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                const isAndroid = /Android/.test(navigator.userAgent);
+                if (isIos) {
+                    // Apre Google Maps app su iOS in modalità navigazione
+                    const base = origin
+                        ? `comgooglemaps://?saddr=${origin}&daddr=${dest}&directionsmode=driving`
+                        : `comgooglemaps://?daddr=${dest}&directionsmode=driving`;
+                    return base;
+                }
+                if (isAndroid) {
+                    // Su Android avvia direttamente la navigazione turn-by-turn
+                    return `google.navigation:q=${dest}&mode=d`;
+                }
+                // Desktop: apre Google Maps web con il percorso
+                const webBase = origin
+                    ? `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`
+                    : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+                return webBase;
+            })();
 
             const deliveredInfo = isDelivered
                 ? `<div class="mt-3 flex items-center space-x-1.5 text-xs text-green-600">
@@ -651,6 +684,7 @@ async function loadInvoices() {
                     </div>` : ''}
                     ${directionsUrl ? `
                     <a href="${directionsUrl}" target="_blank" rel="noopener"
+                        onclick="handleNavigation(event, '${directionsUrl}', '${encodeURIComponent(inv.coordinates)}')"
                         class="mb-3 flex items-center space-x-1.5 text-xs text-brand-600 font-medium active:opacity-70">
                         <i data-feather="navigation" class="w-3.5 h-3.5 flex-shrink-0"></i>
                         <span class="underline underline-offset-2">Avvia itinerario</span>
