@@ -335,6 +335,16 @@ function handleNavigation(event, appUrl, encodedCoords) {
     window.addEventListener('blur', () => clearTimeout(timeout), { once: true });
 }
 
+function handleWaze(event, wazeAppUrl) {
+    event.preventDefault();
+    // Prova ad aprire l'app Waze; se non è installata usa il fallback web
+    const coords = wazeAppUrl.replace('waze://?ll=', '').replace('&navigate=yes', '');
+    const fallback = `https://waze.com/ul?ll=${coords}&navigate=yes`;
+    const timeout = setTimeout(() => { window.open(fallback, '_blank'); }, 1500);
+    window.location.href = wazeAppUrl;
+    window.addEventListener('blur', () => clearTimeout(timeout), { once: true });
+}
+
 function formatDate(dateStr, timeStr) {
     if (!dateStr) return '—';
     const d = new Date(dateStr + (timeStr ? 'T' + timeStr : ''));
@@ -621,7 +631,9 @@ async function loadInvoices() {
                 if (!inv.coordinates) return null;
                 const [lat, lng] = inv.coordinates.split(',').map(s => s.trim());
                 if (!lat || !lng) return null;
-                return `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+                // waze:// apre direttamente l'app con navigazione immediata.
+                // Fallback https:// per chi non ha Waze installato (gestito da handleWaze).
+                return `waze://?ll=${lat},${lng}&navigate=yes`;
             })();
 
             const directionsUrl = (() => {
@@ -702,7 +714,8 @@ async function loadInvoices() {
                             <span class="underline underline-offset-2">Google Maps</span>
                         </a>` : ''}
                         ${wazeUrl ? `
-                        <a href="${wazeUrl}" target="_blank" rel="noopener"
+                        <a href="${wazeUrl}" rel="noopener"
+                            onclick="handleWaze(event, '${wazeUrl}')"
                             class="flex items-center space-x-1.5 text-xs text-blue-500 font-medium active:opacity-70">
                             <i data-feather="navigation" class="w-3.5 h-3.5 flex-shrink-0"></i>
                             <span class="underline underline-offset-2">Waze</span>
