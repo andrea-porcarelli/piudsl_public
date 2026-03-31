@@ -621,27 +621,18 @@ async function loadInvoices() {
                 if (!inv.coordinates) return null;
                 const dest = encodeURIComponent(inv.coordinates);
                 const origin = prevCoords ? encodeURIComponent(prevCoords) : null;
-                const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                const isAndroid = /Android/.test(navigator.userAgent);
+                // iOS: deep link all'app Google Maps
+                const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 if (isIos) {
-                    // Apre Google Maps app su iOS in modalità navigazione
-                    const base = origin
+                    return origin
                         ? `comgooglemaps://?saddr=${origin}&daddr=${dest}&directionsmode=driving`
                         : `comgooglemaps://?daddr=${dest}&directionsmode=driving`;
-                    return base;
                 }
-                if (isAndroid) {
-                    // Dal browser Android si usa l'URL web di Maps con dirflg=d
-                    // che il sistema operativo intercetta e apre nell'app Google Maps
-                    return origin
-                        ? `https://maps.google.com/maps?saddr=${origin}&daddr=${dest}&dirflg=d`
-                        : `https://maps.google.com/maps?daddr=${dest}&dirflg=d`;
-                }
-                // Desktop: apre Google Maps web con il percorso
-                const webBase = origin
-                    ? `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`
-                    : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
-                return webBase;
+                // Android e desktop: maps.google.com con dirflg=d apre l'app su Android
+                // e il sito web su desktop — funziona indipendentemente dallo user agent
+                return origin
+                    ? `https://maps.google.com/maps?saddr=${origin}&daddr=${dest}&dirflg=d`
+                    : `https://maps.google.com/maps?daddr=${dest}&dirflg=d`;
             })();
 
             const deliveredInfo = isDelivered
