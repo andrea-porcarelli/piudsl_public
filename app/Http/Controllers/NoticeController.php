@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class NoticeController extends Controller
 {
@@ -18,11 +19,23 @@ class NoticeController extends Controller
                 ->withHeaders(['X-Api-Token' => config('services.piudsl_api.s2s_token')])
                 ->get(config('services.piudsl_api.base_url') . '/notices/active');
 
+            Log::info('NoticeController: risposta API', [
+                'status' => $response->status(),
+                'body'   => $response->json(),
+            ]);
+
             if ($response->successful()) {
                 return response()->json(['notice' => $response->json('data')]);
             }
-        } catch (\Exception) {
-            // API non raggiungibile: nessun avviso mostrato
+
+            Log::warning('NoticeController: risposta non successful', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('NoticeController: eccezione durante la chiamata API', [
+                'message' => $e->getMessage(),
+            ]);
         }
 
         return response()->json(['notice' => null]);
