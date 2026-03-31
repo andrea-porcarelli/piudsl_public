@@ -375,7 +375,7 @@
                 <ul class="space-y-2 text-sm text-gray-500">
                     <li class="flex items-center">
                         <i data-feather="check" class="w-4 h-4 text-red-600 mr-2"></i>
-                        Tecnologia 5G/LTE
+                        Tecnologia 5Ghz
                     </li>
                     <li class="flex items-center">
                         <i data-feather="check" class="w-4 h-4 text-red-600 mr-2"></i>
