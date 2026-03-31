@@ -136,7 +136,11 @@ class TechnicianController extends Controller
                 if (empty($inv['coordinates'])) {
                     continue;
                 }
-                [$lat, $lng] = array_map('floatval', explode(',', $inv['coordinates'], 2));
+                $parts = explode(',', $inv['coordinates'], 2);
+                if (count($parts) < 2) {
+                    continue;
+                }
+                [$lat, $lng] = array_map('floatval', $parts);
                 $dist = $this->haversine($fromLat, $fromLng, $lat, $lng);
                 if ($dist < $bestDist) {
                     $bestDist = $dist;
