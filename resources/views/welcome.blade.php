@@ -979,15 +979,15 @@
                     <p class="text-gray-600">Accedi al tuo account per gestire i servizi</p>
                 </div>
 
-                <form onsubmit="handleLogin(event)" class="space-y-4">
+                <form onsubmit="handleLogin(event)" action="/auth/login" method="POST" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                        <input id="login-email" type="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="cliente@esempio.com" required>
+                        <input id="login-email" type="email" name="email" autocomplete="username" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="cliente@esempio.com" required>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                        <input id="login-password" type="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="••••••••" required>
+                        <input id="login-password" type="password" name="password" autocomplete="current-password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="••••••••" required>
                     </div>
 
                     <div id="login-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"></div>
@@ -1123,6 +1123,12 @@
                 errorEl.textContent = data.message || 'Credenziali non valide.';
                 errorEl.classList.remove('hidden');
                 return;
+            }
+
+            // Offre al browser di salvare le credenziali (Chrome/Edge/Safari)
+            if (window.PasswordCredential) {
+                const cred = new PasswordCredential({ id: email, password });
+                await navigator.credentials.store(cred).catch(() => {});
             }
 
             if (data.role === 'technician') {

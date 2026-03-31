@@ -631,8 +631,11 @@ async function loadInvoices() {
                     return base;
                 }
                 if (isAndroid) {
-                    // Su Android avvia direttamente la navigazione turn-by-turn
-                    return `google.navigation:q=${dest}&mode=d`;
+                    // Dal browser Android si usa l'URL web di Maps con dirflg=d
+                    // che il sistema operativo intercetta e apre nell'app Google Maps
+                    return origin
+                        ? `https://maps.google.com/maps?saddr=${origin}&daddr=${dest}&dirflg=d`
+                        : `https://maps.google.com/maps?daddr=${dest}&dirflg=d`;
                 }
                 // Desktop: apre Google Maps web con il percorso
                 const webBase = origin
