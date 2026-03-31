@@ -98,61 +98,54 @@
 <!-- Main Content -->
 <main class="content-area pt-14">
 
-    <!-- ===== CALENDAR EVENTS ===== -->
-    <section id="section-calendar" class="px-4 py-4 space-y-3">
+    <!-- ===== AGENDA ===== -->
+    <section id="section-agenda" class="px-4 py-4 space-y-3">
         <div class="flex items-center justify-between mb-1">
-            <h2 class="text-base font-semibold text-gray-700">Calendario</h2>
-            <button onclick="loadCalendar()" class="text-brand-600 text-sm font-medium flex items-center space-x-1">
+            <h2 class="text-base font-semibold text-gray-700">Agenda</h2>
+            <button onclick="loadAgenda()" class="text-brand-600 text-sm font-medium flex items-center space-x-1">
                 <i data-feather="refresh-cw" class="w-3.5 h-3.5"></i>
                 <span>Aggiorna</span>
             </button>
         </div>
-        <div id="calendar-loading" class="space-y-3">
-            <div class="skeleton h-28 rounded-2xl"></div>
-            <div class="skeleton h-28 rounded-2xl"></div>
-            <div class="skeleton h-28 rounded-2xl"></div>
-        </div>
-        <div id="calendar-error" class="hidden text-center py-10">
-            <i data-feather="alert-circle" class="w-10 h-10 text-red-400 mx-auto mb-2"></i>
-            <p class="text-gray-500 text-sm mb-3">Impossibile caricare il calendario.</p>
-            <button onclick="loadCalendar()" class="text-brand-600 text-sm font-medium">Riprova</button>
-        </div>
-        <div id="calendar-empty" class="hidden text-center py-10">
-            <i data-feather="calendar" class="w-10 h-10 text-gray-300 mx-auto mb-2"></i>
-            <p class="text-gray-400 text-sm">Nessun evento in programma.</p>
-        </div>
-        <div id="calendar-list" class="hidden space-y-3"></div>
-    </section>
 
-    <!-- ===== CART ACTIVITIES ===== -->
-    <section id="section-activities" class="hidden px-4 py-4 space-y-3">
-        <div class="flex items-center justify-between mb-1">
-            <h2 class="text-base font-semibold text-gray-700">Attività</h2>
-            <button onclick="loadActivities()" class="text-brand-600 text-sm font-medium flex items-center space-x-1">
-                <i data-feather="refresh-cw" class="w-3.5 h-3.5"></i>
-                <span>Aggiorna</span>
+        <!-- Navigatore data -->
+        <div class="flex items-center bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <button onclick="shiftDate(-1)" class="px-4 py-2.5 text-gray-400 active:bg-gray-50 transition-colors">
+                <i data-feather="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <input type="date" id="agenda-date" onchange="onDateChange()"
+                   class="flex-1 text-center text-sm font-semibold text-gray-800 focus:outline-none bg-transparent py-2.5 cursor-pointer">
+            <button onclick="shiftDate(1)" class="px-4 py-2.5 text-gray-400 active:bg-gray-50 transition-colors">
+                <i data-feather="chevron-right" class="w-4 h-4"></i>
             </button>
         </div>
-        <div id="activities-loading" class="space-y-3">
+        <div class="flex justify-center -mt-1">
+            <button id="today-btn" onclick="goToToday()" class="hidden text-xs text-brand-600 font-medium underline underline-offset-2">
+                Torna ad oggi
+            </button>
+        </div>
+
+        <div id="agenda-loading" class="space-y-3">
+            <div class="skeleton h-28 rounded-2xl"></div>
             <div class="skeleton h-28 rounded-2xl"></div>
             <div class="skeleton h-28 rounded-2xl"></div>
         </div>
-        <div id="activities-error" class="hidden text-center py-10">
+        <div id="agenda-error" class="hidden text-center py-10">
             <i data-feather="alert-circle" class="w-10 h-10 text-red-400 mx-auto mb-2"></i>
-            <p class="text-gray-500 text-sm mb-3">Impossibile caricare le attività.</p>
-            <button onclick="loadActivities()" class="text-brand-600 text-sm font-medium">Riprova</button>
+            <p class="text-gray-500 text-sm mb-3">Impossibile caricare l'agenda.</p>
+            <button onclick="loadAgenda()" class="text-brand-600 text-sm font-medium">Riprova</button>
         </div>
-        <div id="activities-empty" class="hidden text-center py-10">
-            <i data-feather="tool" class="w-10 h-10 text-gray-300 mx-auto mb-2"></i>
-            <p class="text-gray-400 text-sm">Nessuna attività assegnata.</p>
+        <div id="agenda-empty" class="hidden text-center py-10">
+            <i data-feather="calendar" class="w-10 h-10 text-gray-300 mx-auto mb-2"></i>
+            <p class="text-gray-400 text-sm">Nessuna attività per questa data.</p>
         </div>
-        <div id="activities-list" class="hidden space-y-3"></div>
+        <div id="agenda-list" class="hidden space-y-3"></div>
     </section>
 
     <!-- ===== FATTURE CARTACEE ===== -->
     <section id="section-invoices" class="hidden px-4 py-4 space-y-3">
         <div class="flex items-center justify-between mb-1">
-            <h2 class="text-base font-semibold text-gray-700">Fatture cartacee</h2>
+            <h2 class="text-base font-semibold text-gray-700">Consegna Fatture cartacee</h2>
             <div class="flex items-center space-x-3">
                 <button id="toggle-delivered-btn" onclick="toggleDelivered()"
                     class="text-xs text-gray-400 font-medium flex items-center space-x-1">
@@ -210,40 +203,6 @@
         <div id="invoices-list" class="hidden space-y-3"></div>
     </section>
 
-    <!-- ===== TICKETS ===== -->
-    <section id="section-tickets" class="hidden px-4 py-4 space-y-3">
-        <div class="flex items-center justify-between mb-1">
-            <h2 class="text-base font-semibold text-gray-700">Ticket</h2>
-            <button onclick="loadTickets()" class="text-brand-600 text-sm font-medium flex items-center space-x-1">
-                <i data-feather="refresh-cw" class="w-3.5 h-3.5"></i>
-                <span>Aggiorna</span>
-            </button>
-        </div>
-
-        <!-- Filter pills -->
-        <div class="flex space-x-2 overflow-x-auto pb-1 scrollbar-hide">
-            <button onclick="filterTickets('all')"     id="filter-all"     class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-brand-600 text-white">Tutti</button>
-            <button onclick="filterTickets('open')"    id="filter-open"    class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">Aperti</button>
-            <button onclick="filterTickets('pending')" id="filter-pending" class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">In attesa</button>
-            <button onclick="filterTickets('close')"   id="filter-close"   class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600">Chiusi</button>
-        </div>
-
-        <div id="tickets-loading" class="space-y-3">
-            <div class="skeleton h-24 rounded-2xl"></div>
-            <div class="skeleton h-24 rounded-2xl"></div>
-            <div class="skeleton h-24 rounded-2xl"></div>
-        </div>
-        <div id="tickets-error" class="hidden text-center py-10">
-            <i data-feather="alert-circle" class="w-10 h-10 text-red-400 mx-auto mb-2"></i>
-            <p class="text-gray-500 text-sm mb-3">Impossibile caricare i ticket.</p>
-            <button onclick="loadTickets()" class="text-brand-600 text-sm font-medium">Riprova</button>
-        </div>
-        <div id="tickets-empty" class="hidden text-center py-10">
-            <i data-feather="inbox" class="w-10 h-10 text-gray-300 mx-auto mb-2"></i>
-            <p class="text-gray-400 text-sm">Nessun ticket trovato.</p>
-        </div>
-        <div id="tickets-list" class="hidden space-y-3"></div>
-    </section>
 
 </main>
 
@@ -258,22 +217,14 @@
 </div>
 
 <!-- Bottom Tab Bar -->
-<nav class="tab-bar fixed bottom-0 left-0 right-0 z-40 bg-white grid grid-cols-4">
-    <button id="tab-calendar"   onclick="switchTab('calendar')"   class="tab-active   flex flex-col items-center justify-center pt-2 pb-1 space-y-0.5 transition-colors">
-        <i data-feather="calendar"  class="w-5 h-5"></i>
-        <span class="text-[10px] font-semibold">Calendario</span>
+<nav class="tab-bar fixed bottom-0 left-0 right-0 z-40 bg-white grid grid-cols-2">
+    <button id="tab-agenda"   onclick="switchTab('agenda')"   class="tab-active flex flex-col items-center justify-center pt-2 pb-1 space-y-0.5 transition-colors">
+        <i data-feather="calendar" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Agenda</span>
     </button>
-    <button id="tab-activities" onclick="switchTab('activities')" class="tab-inactive flex flex-col items-center justify-center pt-2 pb-1 space-y-0.5 transition-colors">
-        <i data-feather="tool"      class="w-5 h-5"></i>
-        <span class="text-[10px] font-semibold">Attività</span>
-    </button>
-    <button id="tab-invoices"   onclick="switchTab('invoices')"   class="tab-inactive flex flex-col items-center justify-center pt-2 pb-1 space-y-0.5 transition-colors">
+    <button id="tab-invoices" onclick="switchTab('invoices')" class="tab-inactive flex flex-col items-center justify-center pt-2 pb-1 space-y-0.5 transition-colors">
         <i data-feather="file-text" class="w-5 h-5"></i>
-        <span class="text-[10px] font-semibold">Fatture</span>
-    </button>
-    <button id="tab-tickets"    onclick="switchTab('tickets')"    class="tab-inactive flex flex-col items-center justify-center pt-2 pb-1 space-y-0.5 transition-colors">
-        <i data-feather="message-square" class="w-5 h-5"></i>
-        <span class="text-[10px] font-semibold">Ticket</span>
+        <span class="text-[10px] font-semibold">Consegna Fatture</span>
     </button>
 </nav>
 
@@ -283,9 +234,9 @@ feather.replace();
 const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
 // ── Loaded flags (lazy loading) ──────────────────────────────────────────────
-const loaded = { calendar: false, activities: false, invoices: false, tickets: false };
+const loaded = { agenda: false, invoices: false };
 
-// ── All tickets data (for client-side filtering) ─────────────────────────────
+// ── Tickets state ─────────────────────────────────────────────────────────────
 let allTickets = [];
 let activeFilter = 'all';
 
@@ -295,8 +246,8 @@ function showSessionExpired() {
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
-const tabs     = ['calendar', 'activities', 'invoices', 'tickets'];
-const sections = { calendar: 'section-calendar', activities: 'section-activities', invoices: 'section-invoices', tickets: 'section-tickets' };
+const tabs     = ['agenda', 'invoices'];
+const sections = { agenda: 'section-agenda', invoices: 'section-invoices' };
 
 function switchTab(name) {
     tabs.forEach(t => {
@@ -307,10 +258,8 @@ function switchTab(name) {
     });
 
     if (!loaded[name]) {
-        if (name === 'calendar')   loadCalendar();
-        if (name === 'activities') loadActivities();
-        if (name === 'invoices')   loadInvoicesFirstTime();
-        if (name === 'tickets')    loadTickets();
+        if (name === 'agenda')   loadAgenda();
+        if (name === 'invoices') loadInvoicesFirstTime();
     }
 }
 
@@ -381,119 +330,207 @@ async function handleLogout() {
     window.location.href = '/';
 }
 
-// ── CALENDAR EVENTS ───────────────────────────────────────────────────────────
-async function loadCalendar() {
-    showState('calendar', 'loading');
-    loaded.calendar = false;
+// ── AGENDA (calendario + attività + ticket) ───────────────────────────────────
+function initAgendaDate() {
+    document.getElementById('agenda-date').value = new Date().toISOString().slice(0, 10);
+}
+
+function shiftDate(delta) {
+    const input = document.getElementById('agenda-date');
+    const d = new Date(input.value);
+    d.setDate(d.getDate() + delta);
+    input.value = d.toISOString().slice(0, 10);
+    onDateChange();
+}
+
+function goToToday() {
+    document.getElementById('agenda-date').value = new Date().toISOString().slice(0, 10);
+    onDateChange();
+}
+
+function onDateChange() {
+    loaded.agenda = false;
+    loadAgenda();
+}
+
+async function loadAgenda() {
+    showState('agenda', 'loading');
+    loaded.agenda = false;
+
+    const date  = document.getElementById('agenda-date').value;
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('today-btn').classList.toggle('hidden', date === today);
 
     try {
-        const res  = await fetch('/api/technician/calendar-events', { headers: { 'X-CSRF-TOKEN': CSRF } });
-        if (res.status === 401) { showSessionExpired(); return; }
+        const [calRes, actRes, tickRes] = await Promise.all([
+            fetch('/api/technician/calendar-events', { headers: { 'X-CSRF-TOKEN': CSRF } }),
+            fetch('/api/technician/cart-activities',  { headers: { 'X-CSRF-TOKEN': CSRF } }),
+            fetch('/api/technician/tickets',           { headers: { 'X-CSRF-TOKEN': CSRF } }),
+        ]);
 
-        const json = await res.json();
-        const data = json.data ?? [];
+        if ([calRes, actRes, tickRes].some(r => r.status === 401)) { showSessionExpired(); return; }
 
-        if (!data.length) { showState('calendar', 'empty'); loaded.calendar = true; return; }
+        const [calJson, actJson, tickJson] = await Promise.all([calRes.json(), actRes.json(), tickRes.json()]);
 
-        data.sort((a, b) => (a.start_date + a.start_time) > (b.start_date + b.start_time) ? 1 : -1);
+        // Filtra eventi e attività per la data selezionata
+        const events = (calJson.data ?? []).filter(ev =>
+            (ev.start_date ?? '') <= date && (ev.end_date ?? ev.start_date ?? '') >= date
+        );
+        const activities = (actJson.data ?? []).filter(act => act.event_at === date);
+        allTickets = tickJson.data ?? [];
 
-        const list = document.getElementById('calendar-list');
-        list.innerHTML = data.map(ev => {
-            const color = ev.color || '#0284c7';
-            const histories = (ev.histories ?? []).map(h =>
-                `<li class="text-xs text-gray-500 border-l-2 border-gray-200 pl-2 py-0.5">${h.note} <span class="text-gray-400 text-[10px]">${formatDate(h.created_at)}</span></li>`
-            ).join('');
+        // Unifica e ordina per orario
+        const combined = [
+            ...events.map(ev     => ({ type: 'calendar', time: ev.start_time   || '00:00', data: ev })),
+            ...activities.map(act => ({ type: 'activity', time: act.event_time || '00:00', data: act })),
+        ].sort((a, b) => a.time > b.time ? 1 : -1);
 
-            return `
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="h-1" style="background:${color}"></div>
-                <div class="p-4">
-                    <div class="flex items-start justify-between gap-2 mb-2">
-                        <span class="font-semibold text-gray-900 text-sm leading-tight">${ev.title}</span>
-                        ${statusBadge(ev.status)}
-                    </div>
-                    <div class="flex items-center text-xs text-gray-500 space-x-3 mb-1">
-                        <span class="flex items-center space-x-1">
-                            <i data-feather="clock" class="w-3 h-3"></i>
-                            <span>${formatDate(ev.start_date, ev.start_time)} → ${formatDate(ev.end_date, ev.end_time)}</span>
-                        </span>
-                    </div>
-                    ${ev.customer ? `<div class="flex items-center text-xs text-gray-500 space-x-1 mb-2"><i data-feather="user" class="w-3 h-3"></i><span>${ev.customer}</span></div>` : ''}
-                    ${ev.description ? `<p class="text-xs text-gray-400 mb-2">${ev.description}</p>` : ''}
-                    ${histories ? `
-                    <details class="mt-1">
-                        <summary class="text-xs text-brand-600 cursor-pointer font-medium">Note (${ev.histories.length})</summary>
-                        <ul class="mt-2 space-y-1">${histories}</ul>
-                    </details>` : ''}
-                </div>
-            </div>`;
-        }).join('');
+        if (!combined.length && !allTickets.length) {
+            showState('agenda', 'empty');
+            loaded.agenda = true;
+            return;
+        }
 
-        showState('calendar', 'list');
-        loaded.calendar = true;
+        let html = combined.map(item =>
+            item.type === 'calendar' ? renderCalendarCard(item.data) : renderActivityCard(item.data)
+        ).join('');
+
+        if (allTickets.length) html += renderTicketsBlock();
+
+        document.getElementById('agenda-list').innerHTML = html;
+        showState('agenda', 'list');
+        loaded.agenda = true;
         feather.replace();
 
     } catch (e) {
-        showState('calendar', 'error');
+        showState('agenda', 'error');
     }
 }
 
-// ── CART ACTIVITIES ───────────────────────────────────────────────────────────
-async function loadActivities() {
-    showState('activities', 'loading');
-    loaded.activities = false;
+function renderCalendarCard(ev) {
+    const color = ev.color || '#0284c7';
+    const histories = (ev.histories ?? []).map(h =>
+        `<li class="text-xs text-gray-500 border-l-2 border-gray-200 pl-2 py-0.5">${h.note} <span class="text-gray-400 text-[10px]">${formatDate(h.created_at)}</span></li>`
+    ).join('');
+    return `
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="h-1" style="background:${color}"></div>
+        <div class="px-4 pt-2 pb-0">
+            <span class="text-[10px] font-bold uppercase tracking-wide text-gray-400">Evento calendario</span>
+        </div>
+        <div class="p-4 pt-2">
+            <div class="flex items-start justify-between gap-2 mb-2">
+                <span class="font-semibold text-gray-900 text-sm leading-tight">${ev.title}</span>
+                ${statusBadge(ev.status)}
+            </div>
+            <div class="flex items-center text-xs text-gray-500 space-x-1 mb-1">
+                <i data-feather="clock" class="w-3 h-3"></i>
+                <span>${formatDate(ev.start_date, ev.start_time)} → ${formatDate(ev.end_date, ev.end_time)}</span>
+            </div>
+            ${ev.customer ? `<div class="flex items-center text-xs text-gray-500 space-x-1 mb-2"><i data-feather="user" class="w-3 h-3"></i><span>${ev.customer}</span></div>` : ''}
+            ${ev.description ? `<p class="text-xs text-gray-400 mb-2">${ev.description}</p>` : ''}
+            ${histories ? `
+            <details class="mt-1">
+                <summary class="text-xs text-brand-600 cursor-pointer font-medium">Note (${ev.histories.length})</summary>
+                <ul class="mt-2 space-y-1">${histories}</ul>
+            </details>` : ''}
+        </div>
+    </div>`;
+}
 
-    try {
-        const res  = await fetch('/api/technician/cart-activities', { headers: { 'X-CSRF-TOKEN': CSRF } });
-        if (res.status === 401) { showSessionExpired(); return; }
-
-        const json = await res.json();
-        const data = json.data ?? [];
-
-        if (!data.length) { showState('activities', 'empty'); loaded.activities = true; return; }
-
-        data.sort((a, b) => (a.event_at + a.event_time) > (b.event_at + b.event_time) ? 1 : -1);
-
-        const today = new Date().toISOString().slice(0, 10);
-
-        const list = document.getElementById('activities-list');
-        list.innerHTML = data.map(act => {
-            const isToday = act.event_at === today;
-            const mapsUrl = act.coordinates
-                ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.coordinates)}`
-                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.full_address ?? '')}`;
-
-            return `
-            <div class="bg-white rounded-2xl shadow-sm border ${isToday ? 'border-brand-300' : 'border-gray-100'} overflow-hidden">
-                ${isToday ? '<div class="bg-brand-600 text-white text-[10px] font-bold px-4 py-1">OGGI</div>' : ''}
-                <div class="p-4">
-                    <div class="flex items-start justify-between gap-2 mb-2">
-                        <div>
-                            <span class="font-semibold text-gray-900 text-sm">${act.customer}</span>
-                            ${act.is_first ? '<span class="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-400/20 text-yellow-700">Prima installazione</span>' : ''}
-                        </div>
-                        ${statusBadge(act.status)}
-                    </div>
-                    <a href="${mapsUrl}" target="_blank" rel="noopener" class="flex items-start space-x-1.5 text-xs text-brand-600 mb-2 active:opacity-70">
-                        <i data-feather="map-pin" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"></i>
-                        <span class="underline underline-offset-2">${act.full_address ?? '—'}</span>
-                    </a>
-                    <div class="flex items-center text-xs text-gray-500 space-x-1">
-                        <i data-feather="clock" class="w-3 h-3"></i>
-                        <span>${formatDate(act.event_at)} ${act.event_time ? act.event_time.slice(0,5) : ''}</span>
-                    </div>
-                    ${act.note ? `<p class="text-xs text-gray-400 mt-2">${act.note}</p>` : ''}
+function renderActivityCard(act) {
+    const mapsUrl = act.coordinates
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.coordinates)}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.full_address ?? '')}`;
+    return `
+    <div class="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
+        <div class="h-1 bg-amber-400"></div>
+        <div class="px-4 pt-2 pb-0">
+            <span class="text-[10px] font-bold uppercase tracking-wide text-amber-500">Attività</span>
+        </div>
+        <div class="p-4 pt-2">
+            <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                    <span class="font-semibold text-gray-900 text-sm">${act.customer}</span>
+                    ${act.is_first ? '<span class="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-400/20 text-yellow-700">Prima installazione</span>' : ''}
                 </div>
-            </div>`;
-        }).join('');
+                ${statusBadge(act.status)}
+            </div>
+            <a href="${mapsUrl}" target="_blank" rel="noopener" class="flex items-start space-x-1.5 text-xs text-brand-600 mb-2 active:opacity-70">
+                <i data-feather="map-pin" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"></i>
+                <span class="underline underline-offset-2">${act.full_address ?? '—'}</span>
+            </a>
+            <div class="flex items-center text-xs text-gray-500 space-x-1">
+                <i data-feather="clock" class="w-3 h-3"></i>
+                <span>${act.event_time ? act.event_time.slice(0, 5) : '—'}</span>
+            </div>
+            ${act.note ? `<p class="text-xs text-gray-400 mt-2">${act.note}</p>` : ''}
+        </div>
+    </div>`;
+}
 
-        showState('activities', 'list');
-        loaded.activities = true;
-        feather.replace();
+function renderTicketsBlock() {
+    return `
+    <div class="mt-2">
+        <div class="flex items-center space-x-1.5 mb-2 mt-4 px-1">
+            <i data-feather="message-square" class="w-4 h-4 text-purple-400"></i>
+            <h3 class="text-sm font-semibold text-gray-600">Ticket</h3>
+        </div>
+        <div class="flex space-x-2 overflow-x-auto pb-1">
+            <button onclick="filterAgendaTickets('all')"     id="filter-all"     class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'all'     ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Tutti</button>
+            <button onclick="filterAgendaTickets('open')"    id="filter-open"    class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'open'    ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Aperti</button>
+            <button onclick="filterAgendaTickets('pending')" id="filter-pending" class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'pending' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">In attesa</button>
+            <button onclick="filterAgendaTickets('close')"   id="filter-close"   class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'close'   ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Chiusi</button>
+        </div>
+        <div id="agenda-tickets-cards" class="space-y-3 mt-2">${renderTicketCards()}</div>
+    </div>`;
+}
 
-    } catch (e) {
-        showState('activities', 'error');
+function renderTicketCards() {
+    const filtered = activeFilter === 'all' ? allTickets : allTickets.filter(t => t.ticket_status === activeFilter);
+    if (!filtered.length) {
+        return `<div class="text-center py-6">
+            <i data-feather="inbox" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
+            <p class="text-gray-400 text-sm">Nessun ticket trovato.</p>
+        </div>`;
     }
+    return filtered.map(t => `
+        <div class="bg-white rounded-2xl shadow-sm border border-purple-50 p-4" id="ticket-${t.id}">
+            <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="flex flex-wrap gap-1.5">
+                    ${levelBadge(t.ticket_level)}
+                    ${statusBadge(t.ticket_status)}
+                </div>
+                <span class="text-[10px] text-gray-400 flex-shrink-0">#${t.id}</span>
+            </div>
+            <div class="flex items-center text-xs text-gray-600 space-x-1 mb-1">
+                <i data-feather="user" class="w-3 h-3"></i>
+                <span>${t.customer}</span>
+                ${t.messages_count ? `<span class="ml-2 text-gray-400">· ${t.messages_count} msg</span>` : ''}
+            </div>
+            <div class="text-[10px] text-gray-400 mb-3">${formatDate(t.updated_at)}</div>
+            <div class="flex items-center space-x-2">
+                <select id="status-select-${t.id}" class="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-brand-400 bg-gray-50">
+                    <option value="open"    ${t.ticket_status === 'open'    ? 'selected' : ''}>Aperto</option>
+                    <option value="pending" ${t.ticket_status === 'pending' ? 'selected' : ''}>In attesa</option>
+                    <option value="close"   ${t.ticket_status === 'close'   ? 'selected' : ''}>Chiuso</option>
+                </select>
+                <button onclick="updateTicketStatus(${t.id})" class="text-xs bg-brand-600 hover:bg-brand-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50" id="status-btn-${t.id}">
+                    Salva
+                </button>
+            </div>
+        </div>`
+    ).join('');
+}
+
+function filterAgendaTickets(status) {
+    activeFilter = status;
+    document.querySelectorAll('.ticket-filter').forEach(btn => {
+        btn.className = 'ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ' +
+            (btn.id === 'filter-' + status ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600');
+    });
+    const container = document.getElementById('agenda-tickets-cards');
+    if (container) { container.innerHTML = renderTicketCards(); feather.replace(); }
 }
 
 // ── FATTURE CARTACEE ──────────────────────────────────────────────────────────
@@ -812,75 +849,6 @@ async function markDelivered(btn) {
     }
 }
 
-// ── TICKETS ───────────────────────────────────────────────────────────────────
-async function loadTickets() {
-    showState('tickets', 'loading');
-    loaded.tickets = false;
-    allTickets = [];
-
-    try {
-        const res  = await fetch('/api/technician/tickets', { headers: { 'X-CSRF-TOKEN': CSRF } });
-        if (res.status === 401) { showSessionExpired(); return; }
-
-        const json = await res.json();
-        allTickets = json.data ?? [];
-        loaded.tickets = true;
-
-        renderTickets();
-
-    } catch (e) {
-        showState('tickets', 'error');
-    }
-}
-
-function filterTickets(status) {
-    activeFilter = status;
-    document.querySelectorAll('.ticket-filter').forEach(btn => {
-        btn.className = 'ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ' +
-            (btn.id === 'filter-' + status ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600');
-    });
-    renderTickets();
-}
-
-function renderTickets() {
-    const filtered = activeFilter === 'all' ? allTickets : allTickets.filter(t => t.ticket_status === activeFilter);
-
-    if (!filtered.length) { showState('tickets', 'empty'); return; }
-
-    const list = document.getElementById('tickets-list');
-    list.innerHTML = filtered.map(t => `
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4" id="ticket-${t.id}">
-            <div class="flex items-start justify-between gap-2 mb-2">
-                <div class="flex flex-wrap gap-1.5">
-                    ${levelBadge(t.ticket_level)}
-                    ${statusBadge(t.ticket_status)}
-                </div>
-                <span class="text-[10px] text-gray-400 flex-shrink-0">#${t.id}</span>
-            </div>
-            <div class="flex items-center text-xs text-gray-600 space-x-1 mb-1">
-                <i data-feather="user" class="w-3 h-3"></i>
-                <span>${t.customer}</span>
-                ${t.messages_count ? `<span class="ml-2 text-gray-400">· ${t.messages_count} msg</span>` : ''}
-            </div>
-            <div class="text-[10px] text-gray-400 mb-3">${formatDate(t.updated_at)}</div>
-
-            <!-- Inline status update -->
-            <div class="flex items-center space-x-2">
-                <select id="status-select-${t.id}" class="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-brand-400 bg-gray-50">
-                    <option value="open"    ${t.ticket_status === 'open'    ? 'selected' : ''}>Aperto</option>
-                    <option value="pending" ${t.ticket_status === 'pending' ? 'selected' : ''}>In attesa</option>
-                    <option value="close"   ${t.ticket_status === 'close'   ? 'selected' : ''}>Chiuso</option>
-                </select>
-                <button onclick="updateTicketStatus(${t.id})" class="text-xs bg-brand-600 hover:bg-brand-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50" id="status-btn-${t.id}">
-                    Salva
-                </button>
-            </div>
-        </div>
-    `).join('');
-
-    showState('tickets', 'list');
-    feather.replace();
-}
 
 async function updateTicketStatus(id) {
     const select = document.getElementById('status-select-' + id);
@@ -909,6 +877,8 @@ async function updateTicketStatus(id) {
                 btn.textContent = 'Salva';
                 btn.className = btn.className.replace('bg-green-500', 'bg-brand-600 hover:bg-brand-700');
                 btn.disabled = false;
+                const container = document.getElementById('agenda-tickets-cards');
+                if (container) { container.innerHTML = renderTicketCards(); feather.replace(); }
             }, 1500);
         } else {
             btn.textContent = 'Errore';
@@ -922,7 +892,8 @@ async function updateTicketStatus(id) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-loadCalendar();
+initAgendaDate();
+loadAgenda();
 </script>
 
 @if($mapsApiKey)
