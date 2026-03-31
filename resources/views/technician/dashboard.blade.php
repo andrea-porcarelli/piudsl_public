@@ -628,8 +628,17 @@ async function loadInvoices() {
                         ? `comgooglemaps://?saddr=${origin}&daddr=${dest}&directionsmode=driving`
                         : `comgooglemaps://?daddr=${dest}&directionsmode=driving`;
                 }
-                // Android e desktop: maps.google.com con dirflg=d apre l'app su Android
-                // e il sito web su desktop — funziona indipendentemente dallo user agent
+                // Android: intent:// bypassa l'App Link e lancia direttamente
+                // Google Maps in modalità navigazione, anche sui tablet
+                const isMobileOrTablet = navigator.maxTouchPoints > 0;
+                if (isMobileOrTablet) {
+                    const navParams = origin
+                        ? `maps?saddr=${origin}&daddr=${dest}&dirflg=d`
+                        : `maps?daddr=${dest}&dirflg=d`;
+                    return `intent://maps.google.com/${navParams}` +
+                           `#Intent;scheme=https;package=com.google.android.apps.maps;end`;
+                }
+                // Desktop
                 return origin
                     ? `https://maps.google.com/maps?saddr=${origin}&daddr=${dest}&dirflg=d`
                     : `https://maps.google.com/maps?daddr=${dest}&dirflg=d`;
