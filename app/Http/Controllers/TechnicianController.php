@@ -278,7 +278,7 @@ class TechnicianController extends Controller
     public function updateCartActivity(Request $request, int $id): JsonResponse
     {
         $data = $request->validate([
-            'status' => ['sometimes', 'string', 'in:open,in_progress,suspended,completed,close'],
+            'status' => ['sometimes', 'string', 'in:open,suspended,completed'],
             'note'   => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 

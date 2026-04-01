@@ -958,11 +958,9 @@ const SHEET_STATUS_OPTIONS = {
         { value: 'close',   label: 'Chiuso' },
     ],
     activity: [
-        { value: 'open',        label: 'Aperto' },
-        { value: 'in_progress', label: 'In corso' },
-        { value: 'suspended',   label: 'Sospeso' },
-        { value: 'completed',   label: 'Completato' },
-        { value: 'close',       label: 'Chiuso' },
+        { value: 'open',      label: 'Aperto' },
+        { value: 'suspended', label: 'Sospeso' },
+        { value: 'completed', label: 'Completato' },
     ],
 };
 
@@ -1208,10 +1206,30 @@ function _buildExtraProductsSection(d) {
 
 // ── Sheet actions ─────────────────────────────────────────────────────────────
 async function saveSheetChanges() {
-    const status = document.getElementById('sheet-status').value;
-    const note   = (document.getElementById('sheet-note-input')?.value ?? '').trim();
-    const btn    = document.getElementById('sheet-save-btn');
-    const fb     = document.getElementById('sheet-save-fb');
+    const status    = document.getElementById('sheet-status').value;
+    const noteInput = document.getElementById('sheet-note-input');
+    const note      = (noteInput?.value ?? '').trim();
+    const btn       = document.getElementById('sheet-save-btn');
+    const fb        = document.getElementById('sheet-save-fb');
+
+    if (_sheetType === 'activity' && status === 'suspended' && !note) {
+        noteInput.classList.add('border-red-400', 'bg-red-50');
+        noteInput.placeholder = 'Motivazione obbligatoria per la sospensione…';
+        noteInput.focus();
+        const errId = 'sheet-suspended-err';
+        if (!document.getElementById(errId)) {
+            const err = document.createElement('p');
+            err.id = errId;
+            err.className = 'text-xs text-red-500 font-medium';
+            err.textContent = 'Inserisci una motivazione per lo stato Sospeso.';
+            noteInput.insertAdjacentElement('afterend', err);
+        }
+        return;
+    }
+    // Rimuovi eventuale errore sospensione precedente
+    document.getElementById('sheet-suspended-err')?.remove();
+    if (noteInput) noteInput.classList.remove('border-red-400', 'bg-red-50');
+
     btn.disabled = true; btn.textContent = '…';
 
     try {

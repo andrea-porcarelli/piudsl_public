@@ -283,7 +283,7 @@ Aggiorna stato e/o aggiunge una nota all'attività.
 | `status` | string | no | Nuovo stato |
 | `note` | string | no | Testo nota da aggiungere (max 2000 caratteri) |
 
-**Valori `status` accettati:** `open`, `in_progress`, `suspended`, `completed`, `close`
+**Valori `status` accettati:** `open`, `suspended`, `completed`
 
 ---
 
