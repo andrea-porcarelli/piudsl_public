@@ -343,6 +343,59 @@ Rimuove un prodotto extra precedentemente aggiunto.
 
 ---
 
+### 5. SEGNALAZIONI (da installazione)
+
+#### POST /cart-activities/{id}/reports
+
+Crea un nuovo evento calendario di tipo segnalazione, collegato all'installazione `{id}`, destinato al backoffice.
+
+Il campo `cart_activity_id` viene derivato dal path — non serve nel body.
+
+**Headers:**
+```
+X-Api-Token: <s2s_token>
+Authorization: Bearer <auth_token>
+Content-Type: application/json
+```
+
+**Body JSON:**
+
+| Campo | Tipo | Obbligatorio | Descrizione |
+|-------|------|:------------:|-------------|
+| `date` | string (`YYYY-MM-DD`) | sì | Data della segnalazione |
+| `note` | string | sì | Descrizione della segnalazione (max 2000 caratteri) |
+
+**Esempio richiesta:**
+```json
+{
+  "date": "2026-04-01",
+  "note": "Il cliente non era presente all'appuntamento."
+}
+```
+
+**Risposta (201 Created):**
+```json
+{
+  "data": {
+    "id": 42,
+    "date": "2026-04-01",
+    "note": "Il cliente non era presente all'appuntamento.",
+    "cart_activity_id": 7,
+    "created_at": "2026-04-01T09:30:00Z"
+  }
+}
+```
+
+**Errori:**
+
+| Codice | Causa |
+|--------|-------|
+| `422` | Campi mancanti o non validi (`date` formato errato, `note` vuota) |
+| `404` | `cart_activity_id` non trovato o non appartenente al tecnico autenticato |
+| `401` | Token di sessione scaduto o non valido |
+
+---
+
 ## Riepilogo endpoint
 
 | Metodo | Endpoint | Descrizione |
@@ -359,6 +412,7 @@ Rimuove un prodotto extra precedentemente aggiunto.
 | `POST` | `/cart-activities/{id}/attachments` | Carica immagini su installazione |
 | `POST` | `/cart-activities/{id}/extra-products` | Aggiungi prodotto extra |
 | `DELETE` | `/cart-activities/{id}/extra-products/{extra_product_id}` | Rimuovi prodotto extra |
+| `POST` | `/cart-activities/{id}/reports` | Crea segnalazione per il backoffice |
 
 ---
 

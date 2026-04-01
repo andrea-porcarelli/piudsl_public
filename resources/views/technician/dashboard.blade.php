@@ -1080,6 +1080,77 @@ function _buildFormSection(currentStatus, notes = []) {
     </div>`;
 }
 
+function _buildReportSection(activityId) {
+    const today = new Date().toISOString().slice(0, 10);
+    return `<details class="group" id="sheet-report-wrap">
+        <summary class="flex items-center justify-between w-full py-3 px-4 bg-orange-50 border border-orange-100 rounded-2xl cursor-pointer list-none">
+            <span class="flex items-center space-x-2 text-sm font-semibold text-orange-700">
+                <i data-feather="alert-triangle" class="w-4 h-4"></i>
+                <span>Segnala al backoffice</span>
+            </span>
+            <i data-feather="chevron-down" class="w-4 h-4 text-orange-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="mt-2 bg-gray-50 rounded-2xl p-4 space-y-3">
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-wide">Data</label>
+                <input type="date" id="sheet-report-date" value="${today}"
+                    class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-brand-400">
+            </div>
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-wide">Nota</label>
+                <textarea id="sheet-report-note" rows="3" placeholder="Descrivi la segnalazione…"
+                    class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-brand-400 bg-white placeholder-gray-400"></textarea>
+            </div>
+            <button onclick="saveReport(${activityId})" id="sheet-report-btn"
+                class="w-full text-sm font-semibold bg-orange-500 text-white py-3 rounded-xl active:bg-orange-600 disabled:opacity-50">Invia segnalazione</button>
+            <p id="sheet-report-fb" class="hidden text-xs text-green-600 font-medium text-center">Segnalazione inviata.</p>
+            <p id="sheet-report-err" class="hidden text-xs text-red-500 font-medium text-center"></p>
+        </div>
+    </details>`;
+}
+
+async function saveReport(activityId) {
+    const date    = document.getElementById('sheet-report-date').value;
+    const note    = document.getElementById('sheet-report-note').value.trim();
+    const btn     = document.getElementById('sheet-report-btn');
+    const fb      = document.getElementById('sheet-report-fb');
+    const errEl   = document.getElementById('sheet-report-err');
+
+    if (!note) {
+        document.getElementById('sheet-report-note').classList.add('border-red-400');
+        document.getElementById('sheet-report-note').focus();
+        return;
+    }
+    document.getElementById('sheet-report-note').classList.remove('border-red-400');
+
+    btn.disabled = true; btn.textContent = '…';
+    fb.classList.add('hidden');
+    errEl.classList.add('hidden');
+
+    try {
+        const res = await fetch(`/api/technician/cart-activities/${activityId}/reports`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            body: JSON.stringify({ date, note }),
+        });
+        if (res.status === 401) { showSessionExpired(); return; }
+        if (res.ok) {
+            document.getElementById('sheet-report-note').value = '';
+            document.getElementById('sheet-report-date').value = new Date().toISOString().slice(0, 10);
+            fb.classList.remove('hidden');
+            setTimeout(() => fb.classList.add('hidden'), 3000);
+        } else {
+            const json = await res.json();
+            errEl.textContent = json.message ?? 'Errore durante l\'invio.';
+            errEl.classList.remove('hidden');
+        }
+    } catch (_) {
+        errEl.textContent = 'Errore di rete. Riprova.';
+        errEl.classList.remove('hidden');
+    }
+    btn.disabled = false; btn.textContent = 'Invia segnalazione';
+}
+
 function _buildAttachmentsSection(attachments = []) {
     const thumbs = attachments.map(a =>
         `<a href="${a.url}" target="_blank" rel="noopener" class="block aspect-square rounded-xl overflow-hidden bg-gray-100 active:opacity-80">
@@ -1155,7 +1226,8 @@ function _buildActivityContent(d) {
     ${offerHtml}
     ${_buildExtraProductsSection(d)}
     ${_buildAttachmentsSection(d.attachments ?? [])}
-    ${_buildFormSection(d.status, d.notes ?? [])}`;
+    ${_buildFormSection(d.status, d.notes ?? [])}
+    ${_buildReportSection(d.id)}`;
 }
 
 function _buildExtraProductsSection(d) {

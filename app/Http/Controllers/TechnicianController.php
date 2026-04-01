@@ -307,6 +307,16 @@ class TechnicianController extends Controller
         return $this->proxy($request, 'delete', "/cart-activities/{$id}/extra-products/{$extraProductId}");
     }
 
+    public function createReport(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+            'note' => ['required', 'string', 'max:2000'],
+        ]);
+
+        return $this->proxy($request, 'post', "/cart-activities/{$id}/reports", $data);
+    }
+
     // ── Products ───────────────────────────────────────────────────────────────
 
     public function products(Request $request): JsonResponse

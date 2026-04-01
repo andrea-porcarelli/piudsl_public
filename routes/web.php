@@ -41,6 +41,7 @@ Route::middleware('technician')->group(function () {
         Route::post('/cart-activities/{id}/attachments',                      [TechnicianController::class, 'uploadCartActivityAttachment']);
         Route::post('/cart-activities/{id}/extra-products',                   [TechnicianController::class, 'addExtraProduct']);
         Route::delete('/cart-activities/{id}/extra-products/{extraProductId}',[TechnicianController::class, 'removeExtraProduct']);
+        Route::post('/cart-activities/{id}/reports',                          [TechnicianController::class, 'createReport']);
 
         // Fatture
         Route::get('/invoices/paper',                    [TechnicianController::class, 'paperInvoices']);
