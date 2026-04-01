@@ -1056,35 +1056,29 @@ function _infoRow(icon, text) {
         <span>${esc(text)}</span></div>`;
 }
 
-function _buildStatusSection(currentStatus) {
+function _buildFormSection(currentStatus, notes = []) {
     const opts = (SHEET_STATUS_OPTIONS[_sheetType] ?? []).map(o =>
         `<option value="${o.value}"${currentStatus === o.value ? ' selected' : ''}>${o.label}</option>`
     ).join('');
-    return `<div class="bg-gray-50 rounded-2xl p-4 space-y-3">
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Stato</p>
-        <div class="flex items-center space-x-2">
-            <select id="sheet-status" class="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-brand-400">${opts}</select>
-            <button onclick="saveSheetStatus()" id="sheet-status-btn"
-                class="text-sm font-semibold bg-brand-600 text-white px-4 py-2.5 rounded-xl active:bg-brand-700 disabled:opacity-50 whitespace-nowrap">Salva</button>
-        </div>
-        <p id="sheet-status-fb" class="hidden text-xs text-green-600 font-medium">Stato aggiornato.</p>
-    </div>`;
-}
-
-function _buildNotesSection(notes = []) {
-    const list = (notes).map(n => `
+    const list = notes.map(n => `
         <div class="border-l-2 border-brand-200 pl-3">
             <p class="text-sm text-gray-700 leading-snug">${esc(n.body ?? n.note ?? '')}</p>
             <p class="text-[10px] text-gray-400 mt-0.5">${n.created_by ? esc(n.created_by) + ' · ' : ''}${formatDate(n.created_at)}</p>
         </div>`).join('');
-    return `<div class="space-y-3">
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Note</p>
-        ${list ? `<div class="space-y-3">${list}</div>` : '<p class="text-xs text-gray-400">Nessuna nota.</p>'}
-        <textarea id="sheet-note-input" rows="3" placeholder="Scrivi una nota…"
-            class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-brand-400 bg-gray-50 placeholder-gray-400"></textarea>
-        <button onclick="saveSheetNote()" id="sheet-note-btn"
-            class="w-full text-sm font-semibold bg-gray-800 text-white py-2.5 rounded-xl active:bg-gray-900 disabled:opacity-50">Aggiungi nota</button>
-        <p id="sheet-note-fb" class="hidden text-xs text-green-600 font-medium">Nota aggiunta.</p>
+    return `<div class="bg-gray-50 rounded-2xl p-4 space-y-4">
+        <div class="space-y-2">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Stato</p>
+            <select id="sheet-status" class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-brand-400">${opts}</select>
+        </div>
+        <div class="space-y-3">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Note</p>
+            ${list ? `<div class="space-y-3">${list}</div>` : '<p class="text-xs text-gray-400">Nessuna nota.</p>'}
+            <textarea id="sheet-note-input" rows="3" placeholder="Aggiungi una nota (opzionale)…"
+                class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-brand-400 bg-white placeholder-gray-400"></textarea>
+        </div>
+        <button onclick="saveSheetChanges()" id="sheet-save-btn"
+            class="w-full text-sm font-semibold bg-brand-600 text-white py-3 rounded-xl active:bg-brand-700 disabled:opacity-50">Salva</button>
+        <p id="sheet-save-fb" class="hidden text-xs text-green-600 font-medium text-center">Salvato.</p>
     </div>`;
 }
 
@@ -1121,8 +1115,7 @@ function _buildCalendarContent(d) {
         ${_infoRow('clock', formatDate(d.start_date, d.start_time) + ' → ' + formatDate(d.end_date, d.end_time))}
         ${d.description ? `<p class="text-sm text-gray-500 pt-1">${esc(d.description)}</p>` : ''}
     </div>
-    ${_buildStatusSection(d.status)}
-    ${_buildNotesSection(d.notes ?? [])}
+    ${_buildFormSection(d.status, d.notes ?? [])}
     ${_buildAttachmentsSection(d.attachments ?? [])}
     ${histories ? `<div class="space-y-2">
         <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Storico</p>
@@ -1139,8 +1132,7 @@ function _buildTicketContent(d) {
         ${_infoRow('clock', formatDate(d.updated_at))}
         ${d.messages_count ? `<p class="text-xs text-gray-400">${d.messages_count} messaggi</p>` : ''}
     </div>
-    ${_buildStatusSection(d.ticket_status)}
-    ${_buildNotesSection(d.notes ?? [])}
+    ${_buildFormSection(d.ticket_status, d.notes ?? [])}
     ${_buildAttachmentsSection(d.attachments ?? [])}`;
 }
 
@@ -1163,10 +1155,9 @@ function _buildActivityContent(d) {
         ${d.is_first ? '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-400/20 text-yellow-700 mt-1">Prima installazione</span>' : ''}
     </div>
     ${offerHtml}
-    ${_buildStatusSection(d.status)}
     ${_buildExtraProductsSection(d)}
     ${_buildAttachmentsSection(d.attachments ?? [])}
-    ${_buildNotesSection(d.notes ?? [])}`;
+    ${_buildFormSection(d.status, d.notes ?? [])}`;
 }
 
 function _buildExtraProductsSection(d) {
@@ -1216,69 +1207,65 @@ function _buildExtraProductsSection(d) {
 }
 
 // ── Sheet actions ─────────────────────────────────────────────────────────────
-async function saveSheetStatus() {
+async function saveSheetChanges() {
     const status = document.getElementById('sheet-status').value;
-    const btn    = document.getElementById('sheet-status-btn');
-    const fb     = document.getElementById('sheet-status-fb');
+    const note   = (document.getElementById('sheet-note-input')?.value ?? '').trim();
+    const btn    = document.getElementById('sheet-save-btn');
+    const fb     = document.getElementById('sheet-save-fb');
     btn.disabled = true; btn.textContent = '…';
 
-    const urls    = { calendar: `/api/technician/calendar-events/${_sheetId}`, ticket: `/api/technician/tickets/${_sheetId}`, activity: `/api/technician/cart-activities/${_sheetId}` };
-    const bodies  = { calendar: { status }, ticket: { ticket_status: status }, activity: { status } };
-    const methods = { calendar: 'PATCH', ticket: 'PUT', activity: 'PATCH' };
-
     try {
-        const res = await fetch(urls[_sheetType], {
-            method: methods[_sheetType],
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-            body: JSON.stringify(bodies[_sheetType]),
-        });
-        if (res.status === 401) { showSessionExpired(); return; }
-        if (res.ok) {
-            fb.classList.remove('hidden');
-            setTimeout(() => fb.classList.add('hidden'), 2500);
-            if (_sheetData) _sheetData.status = status;
-            // Aggiorna allTickets se ticket
-            if (_sheetType === 'ticket') {
+        if (_sheetType === 'calendar' || _sheetType === 'activity') {
+            const url    = _sheetType === 'calendar'
+                ? `/api/technician/calendar-events/${_sheetId}`
+                : `/api/technician/cart-activities/${_sheetId}`;
+            const body   = { status };
+            if (note) body.note = note;
+            const res = await fetch(url, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body: JSON.stringify(body),
+            });
+            if (res.status === 401) { showSessionExpired(); return; }
+            if (res.ok) {
+                const json = await res.json();
+                _sheetData = json.data ?? _sheetData;
+            }
+        } else if (_sheetType === 'ticket') {
+            const statusRes = await fetch(`/api/technician/tickets/${_sheetId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body: JSON.stringify({ ticket_status: status }),
+            });
+            if (statusRes.status === 401) { showSessionExpired(); return; }
+
+            if (note) {
+                const noteRes = await fetch(`/api/technician/tickets/${_sheetId}/notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                    body: JSON.stringify({ body: note }),
+                });
+                if (noteRes.status === 401) { showSessionExpired(); return; }
+                if (noteRes.ok) {
+                    const json = await noteRes.json();
+                    if (!_sheetData.notes) _sheetData.notes = [];
+                    _sheetData.notes.push(json.data ?? { body: note, created_at: new Date().toISOString() });
+                }
+            }
+            if (statusRes.ok) {
+                if (_sheetData) _sheetData.ticket_status = status;
                 const t = allTickets.find(t => t.id === _sheetId);
                 if (t) t.ticket_status = status;
                 const c = document.getElementById('agenda-tickets-cards');
                 if (c) { c.innerHTML = renderTicketCards(); feather.replace(); }
             }
         }
+
+        _renderSheetContent();
+        fb.classList.remove('hidden');
+        setTimeout(() => fb.classList.add('hidden'), 2500);
     } catch (_) {}
     btn.disabled = false; btn.textContent = 'Salva';
-}
-
-async function saveSheetNote() {
-    const input = document.getElementById('sheet-note-input');
-    const body  = input.value.trim();
-    if (!body) return;
-    const btn = document.getElementById('sheet-note-btn');
-    const fb  = document.getElementById('sheet-note-fb');
-    btn.disabled = true; btn.textContent = '…';
-
-    const urls    = { calendar: `/api/technician/calendar-events/${_sheetId}`, ticket: `/api/technician/tickets/${_sheetId}/notes`, activity: `/api/technician/cart-activities/${_sheetId}` };
-    const bodies  = { calendar: { note: body }, ticket: { body }, activity: { note: body } };
-    const methods = { calendar: 'PATCH', ticket: 'POST', activity: 'PATCH' };
-
-    try {
-        const res = await fetch(urls[_sheetType], {
-            method: methods[_sheetType],
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-            body: JSON.stringify(bodies[_sheetType]),
-        });
-        if (res.status === 401) { showSessionExpired(); return; }
-        if (res.ok) {
-            const json = await res.json();
-            input.value = '';
-            if (!_sheetData.notes) _sheetData.notes = [];
-            _sheetData.notes.push(json.data ?? { body, created_at: new Date().toISOString() });
-            _renderSheetContent();
-            fb.classList.remove('hidden');
-            setTimeout(() => fb.classList.add('hidden'), 2500);
-        }
-    } catch (_) {}
-    btn.disabled = false; btn.textContent = 'Aggiungi nota';
 }
 
 async function uploadSheetImages(input) {

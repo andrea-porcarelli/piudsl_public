@@ -349,12 +349,13 @@ Rimuove un prodotto extra precedentemente aggiunto.
 |--------|----------|-------------|
 | `GET` | `/products?types[]=product&types[]=supplement` | Lista prodotti/supplementi |
 | `GET` | `/calendar-events/{id}` | Dettaglio evento calendario |
-| `PATCH` | `/calendar-events/{id}` | Aggiorna stato / aggiungi nota |
+| `PATCH` | `/calendar-events/{id}` | Aggiorna stato e/o aggiungi nota (chiamata unica) |
 | `POST` | `/calendar-events/{id}/attachments` | Carica immagini su evento |
+| `PUT` | `/tickets/{id}` | Aggiorna stato ticket (`ticket_status`) |
 | `POST` | `/tickets/{id}/notes` | Aggiungi nota a ticket |
 | `POST` | `/tickets/{id}/attachments` | Carica immagini su ticket |
 | `GET` | `/cart-activities/{id}` | Dettaglio installazione |
-| `PATCH` | `/cart-activities/{id}` | Aggiorna stato / aggiungi nota |
+| `PATCH` | `/cart-activities/{id}` | Aggiorna stato e/o aggiungi nota (chiamata unica) |
 | `POST` | `/cart-activities/{id}/attachments` | Carica immagini su installazione |
 | `POST` | `/cart-activities/{id}/extra-products` | Aggiungi prodotto extra |
 | `DELETE` | `/cart-activities/{id}/extra-products/{extra_product_id}` | Rimuovi prodotto extra |
@@ -366,4 +367,6 @@ Rimuove un prodotto extra precedentemente aggiunto.
 - Il campo `extra_products_total` deve essere sempre ricalcolato server-side ad ogni aggiunta/rimozione e restituito nella risposta.
 - Gli allegati (`attachments`) devono essere accessibili via URL pubblico o URL firmato con scadenza.
 - Le note sono **append-only**: non è prevista modifica o cancellazione di note già inserite.
-- Per i ticket, il cambio stato continua a usare l'endpoint esistente `PUT /tickets/{id}` con il campo `ticket_status`.
+- **Salvataggio unificato:** il frontend invia un unico tasto "Salva" per ogni tipo di attività:
+  - **Calendar / Cart Activity:** singola chiamata `PATCH` con `{ status, note }`. Se `note` è assente o vuota non deve creare una nota.
+  - **Ticket:** due chiamate sequenziali — `PUT /tickets/{id}` con `{ ticket_status }`, poi (solo se l'operatore ha scritto una nota) `POST /tickets/{id}/notes` con `{ body }`. Gli endpoint devono rispondere in modo indipendente; un errore sulla nota non deve invalidare il cambio stato già salvato.
