@@ -1337,6 +1337,13 @@ async function saveSheetChanges() {
             if (res.ok) {
                 const json = await res.json();
                 _sheetData = json.data ?? _sheetData;
+                if (_sheetType === 'activity') {
+                    fb.classList.remove('hidden');
+                    await new Promise(r => setTimeout(r, 1200));
+                    closeActivitySheet();
+                    loadAgenda();
+                    return;
+                }
             }
         } else if (_sheetType === 'ticket') {
             const statusRes = await fetch(`/api/technician/tickets/${_sheetId}`, {
