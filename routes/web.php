@@ -18,11 +18,32 @@ Route::middleware('technician')->group(function () {
     Route::get('/technician', [TechnicianController::class, 'dashboard']);
 
     Route::prefix('/api/technician')->group(function () {
-        Route::get('/calendar-events', [TechnicianController::class, 'calendarEvents']);
-        Route::get('/cart-activities', [TechnicianController::class, 'cartActivities']);
-        Route::get('/tickets',         [TechnicianController::class, 'tickets']);
-        Route::put('/tickets/{id}',    [TechnicianController::class, 'updateTicket']);
-        Route::get('/invoices/paper',            [TechnicianController::class, 'paperInvoices']);
-        Route::patch('/invoices/paper/{id}/deliver', [TechnicianController::class, 'deliverPaperInvoice']);
+        // Liste
+        Route::get('/calendar-events',             [TechnicianController::class, 'calendarEvents']);
+        Route::get('/cart-activities',             [TechnicianController::class, 'cartActivities']);
+        Route::get('/tickets',                     [TechnicianController::class, 'tickets']);
+        Route::get('/products',                    [TechnicianController::class, 'products']);
+
+        // Dettaglio + azioni calendario
+        Route::get('/calendar-events/{id}',        [TechnicianController::class, 'calendarEventDetail']);
+        Route::patch('/calendar-events/{id}',      [TechnicianController::class, 'updateCalendarEvent']);
+        Route::post('/calendar-events/{id}/attachments', [TechnicianController::class, 'uploadCalendarAttachment']);
+
+        // Dettaglio + azioni ticket
+        Route::get('/tickets/{id}',                [TechnicianController::class, 'ticketDetail']);
+        Route::put('/tickets/{id}',                [TechnicianController::class, 'updateTicket']);
+        Route::post('/tickets/{id}/notes',         [TechnicianController::class, 'addTicketNote']);
+        Route::post('/tickets/{id}/attachments',   [TechnicianController::class, 'uploadTicketAttachment']);
+
+        // Dettaglio + azioni cart activities
+        Route::get('/cart-activities/{id}',        [TechnicianController::class, 'cartActivityDetail']);
+        Route::patch('/cart-activities/{id}',      [TechnicianController::class, 'updateCartActivity']);
+        Route::post('/cart-activities/{id}/attachments',                      [TechnicianController::class, 'uploadCartActivityAttachment']);
+        Route::post('/cart-activities/{id}/extra-products',                   [TechnicianController::class, 'addExtraProduct']);
+        Route::delete('/cart-activities/{id}/extra-products/{extraProductId}',[TechnicianController::class, 'removeExtraProduct']);
+
+        // Fatture
+        Route::get('/invoices/paper',                    [TechnicianController::class, 'paperInvoices']);
+        Route::patch('/invoices/paper/{id}/deliver',     [TechnicianController::class, 'deliverPaperInvoice']);
     });
 });

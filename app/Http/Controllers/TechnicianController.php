@@ -175,6 +175,158 @@ class TechnicianController extends Controller
         return $R * 2.0 * asin(sqrt($a));
     }
 
+    // ── Proxy helpers ──────────────────────────────────────────────────────────
+
+    private function proxy(Request $request, string $method, string $path, array $data = []): JsonResponse
+    {
+        $http = Http::timeout(15)->withHeaders($this->apiHeaders($request));
+
+        $response = match ($method) {
+            'get'    => $http->get($this->baseUrl() . $path, $data ?: []),
+            'post'   => $http->post($this->baseUrl() . $path, $data),
+            'patch'  => $http->patch($this->baseUrl() . $path, $data),
+            'put'    => $http->put($this->baseUrl() . $path, $data),
+            'delete' => $http->delete($this->baseUrl() . $path),
+            default  => $http->get($this->baseUrl() . $path),
+        };
+
+        if ($response->status() === 401) {
+            return response()->json(['message' => 'Sessione scaduta.'], 401);
+        }
+
+        return response()->json($response->json(), $response->status());
+    }
+
+    private function proxyUpload(Request $request, string $path): JsonResponse
+    {
+        $pending = Http::timeout(60)->withHeaders($this->apiHeaders($request));
+        $files   = $request->file('images', []);
+        if (! is_array($files)) {
+            $files = $files ? [$files] : [];
+        }
+
+        foreach ($files as $i => $file) {
+            $pending = $pending->attach(
+                "images[{$i}]",
+                file_get_contents($file->getRealPath()),
+                $file->getClientOriginalName(),
+                ['Content-Type' => $file->getMimeType()]
+            );
+        }
+
+        $response = $pending->post($this->baseUrl() . $path);
+
+        if ($response->status() === 401) {
+            return response()->json(['message' => 'Sessione scaduta.'], 401);
+        }
+
+        return response()->json($response->json(), $response->status());
+    }
+
+    // ── Calendar Events ────────────────────────────────────────────────────────
+
+    public function calendarEventDetail(Request $request, int $id): JsonResponse
+    {
+        return $this->proxy($request, 'get', "/calendar-events/{$id}");
+    }
+
+    public function updateCalendarEvent(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'status' => ['sometimes', 'string', 'in:open,in_progress,suspended,completed,close'],
+            'note'   => ['sometimes', 'nullable', 'string', 'max:2000'],
+        ]);
+
+        return $this->proxy($request, 'patch', "/calendar-events/{$id}", $data);
+    }
+
+    public function uploadCalendarAttachment(Request $request, int $id): JsonResponse
+    {
+        $request->validate(['images' => ['required'], 'images.*' => ['file', 'image', 'max:10240']]);
+
+        return $this->proxyUpload($request, "/calendar-events/{$id}/attachments");
+    }
+
+    // ── Tickets ────────────────────────────────────────────────────────────────
+
+    public function ticketDetail(Request $request, int $id): JsonResponse
+    {
+        return $this->proxy($request, 'get', "/tickets/{$id}");
+    }
+
+    public function addTicketNote(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate(['body' => ['required', 'string', 'max:2000']]);
+
+        return $this->proxy($request, 'post', "/tickets/{$id}/notes", $data);
+    }
+
+    public function uploadTicketAttachment(Request $request, int $id): JsonResponse
+    {
+        $request->validate(['images' => ['required'], 'images.*' => ['file', 'image', 'max:10240']]);
+
+        return $this->proxyUpload($request, "/tickets/{$id}/attachments");
+    }
+
+    // ── Cart Activities ────────────────────────────────────────────────────────
+
+    public function cartActivityDetail(Request $request, int $id): JsonResponse
+    {
+        return $this->proxy($request, 'get', "/cart-activities/{$id}");
+    }
+
+    public function updateCartActivity(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'status' => ['sometimes', 'string', 'in:open,in_progress,suspended,completed,close'],
+            'note'   => ['sometimes', 'nullable', 'string', 'max:2000'],
+        ]);
+
+        return $this->proxy($request, 'patch', "/cart-activities/{$id}", $data);
+    }
+
+    public function uploadCartActivityAttachment(Request $request, int $id): JsonResponse
+    {
+        $request->validate(['images' => ['required'], 'images.*' => ['file', 'image', 'max:10240']]);
+
+        return $this->proxyUpload($request, "/cart-activities/{$id}/attachments");
+    }
+
+    public function addExtraProduct(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'product_id' => ['required', 'integer'],
+            'quantity'   => ['required', 'integer', 'min:1'],
+        ]);
+
+        return $this->proxy($request, 'post', "/cart-activities/{$id}/extra-products", $data);
+    }
+
+    public function removeExtraProduct(Request $request, int $id, int $extraProductId): JsonResponse
+    {
+        return $this->proxy($request, 'delete', "/cart-activities/{$id}/extra-products/{$extraProductId}");
+    }
+
+    // ── Products ───────────────────────────────────────────────────────────────
+
+    public function products(Request $request): JsonResponse
+    {
+        $types = (array) $request->query('types', ['product', 'supplement']);
+        $qs    = implode('&', array_map(fn ($t) => 'types[]=' . urlencode($t), $types));
+
+        $response = Http::timeout(10)
+            ->withHeaders($this->apiHeaders($request))
+            ->get($this->baseUrl() . '/products?' . $qs);
+
+        if ($response->status() === 401) {
+            return response()->json(['message' => 'Sessione scaduta.'], 401);
+        }
+
+        return response()->json($response->json(), $response->status());
+    }
+
+    // ── Tickets (update) ───────────────────────────────────────────────────────
+
     public function updateTicket(Request $request, int $id): JsonResponse
     {
         $data = $request->validate([

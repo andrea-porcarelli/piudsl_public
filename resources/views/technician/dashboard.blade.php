@@ -206,6 +206,37 @@
 
 </main>
 
+<!-- ===== ACTIVITY DETAIL SHEET ===== -->
+<div id="activity-sheet" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/50" onclick="closeActivitySheet()"></div>
+    <div id="activity-sheet-panel"
+         class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl flex flex-col shadow-2xl"
+         style="max-height:92vh; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.32,0.72,0,1)">
+        <!-- Handle -->
+        <div class="flex-shrink-0 flex justify-center py-3 cursor-pointer" onclick="closeActivitySheet()">
+            <div class="w-10 h-1 rounded-full bg-gray-300"></div>
+        </div>
+        <!-- Header -->
+        <div class="flex-shrink-0 flex items-center justify-between px-5 pb-3 border-b border-gray-100">
+            <div id="sheet-header-badge" class="flex items-center space-x-2"></div>
+            <button onclick="closeActivitySheet()" class="p-2 -mr-2 rounded-xl text-gray-400 active:bg-gray-100">
+                <i data-feather="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <!-- Body -->
+        <div class="flex-1 overflow-y-auto" style="padding-bottom: env(safe-area-inset-bottom)">
+            <div id="sheet-loading" class="px-5 py-6 space-y-3">
+                <div class="skeleton h-5 rounded-lg w-3/4"></div>
+                <div class="skeleton h-4 rounded-lg w-1/2"></div>
+                <div class="skeleton h-4 rounded-lg w-2/3"></div>
+                <div class="skeleton h-24 rounded-xl w-full mt-2"></div>
+                <div class="skeleton h-24 rounded-xl w-full"></div>
+            </div>
+            <div id="sheet-content" class="hidden px-5 pt-4 space-y-6" style="padding-bottom:2.5rem"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast consegna -->
 <div id="deliver-toast"
     class="hidden fixed top-[calc(env(safe-area-inset-top)+3.5rem+0.75rem)] left-4 right-4 z-50
@@ -434,6 +465,11 @@ function renderCalendarCard(ev) {
                 <summary class="text-xs text-brand-600 cursor-pointer font-medium">Note (${ev.histories.length})</summary>
                 <ul class="mt-2 space-y-1">${histories}</ul>
             </details>` : ''}
+            <button onclick="openActivityDetail('calendar', ${ev.id})"
+                class="mt-3 w-full flex items-center justify-center space-x-1.5 text-xs text-brand-600 font-semibold py-2 border border-brand-200 rounded-xl active:bg-brand-50 transition-colors">
+                <i data-feather="edit-2" class="w-3.5 h-3.5"></i>
+                <span>Gestisci</span>
+            </button>
         </div>
     </div>`;
 }
@@ -465,6 +501,11 @@ function renderActivityCard(act) {
                 <span>${act.event_time ? act.event_time.slice(0, 5) : '—'}</span>
             </div>
             ${act.note ? `<p class="text-xs text-gray-400 mt-2">${act.note}</p>` : ''}
+            <button onclick="openActivityDetail('activity', ${act.id})"
+                class="mt-3 w-full flex items-center justify-center space-x-1.5 text-xs text-amber-600 font-semibold py-2 border border-amber-200 rounded-xl active:bg-amber-50 transition-colors">
+                <i data-feather="edit-2" class="w-3.5 h-3.5"></i>
+                <span>Gestisci</span>
+            </button>
         </div>
     </div>`;
 }
@@ -519,6 +560,11 @@ function renderTicketCards() {
                     Salva
                 </button>
             </div>
+            <button onclick="openActivityDetail('ticket', ${t.id})"
+                class="mt-2 w-full flex items-center justify-center space-x-1.5 text-xs text-purple-600 font-semibold py-2 border border-purple-200 rounded-xl active:bg-purple-50 transition-colors">
+                <i data-feather="edit-2" class="w-3.5 h-3.5"></i>
+                <span>Gestisci</span>
+            </button>
         </div>`
     ).join('');
 }
@@ -889,6 +935,438 @@ async function updateTicketStatus(id) {
         btn.textContent = 'Errore';
         setTimeout(() => { btn.textContent = 'Salva'; btn.disabled = false; }, 1500);
     }
+}
+
+// ── ACTIVITY DETAIL SHEET ────────────────────────────────────────────────────
+
+let _sheetType = null;
+let _sheetId   = null;
+let _sheetData = null;
+let _availableProducts = null;
+
+const SHEET_STATUS_OPTIONS = {
+    calendar: [
+        { value: 'open',        label: 'Aperto' },
+        { value: 'in_progress', label: 'In corso' },
+        { value: 'suspended',   label: 'Sospeso' },
+        { value: 'completed',   label: 'Completato' },
+        { value: 'close',       label: 'Chiuso' },
+    ],
+    ticket: [
+        { value: 'open',    label: 'Aperto' },
+        { value: 'pending', label: 'In attesa' },
+        { value: 'close',   label: 'Chiuso' },
+    ],
+    activity: [
+        { value: 'open',        label: 'Aperto' },
+        { value: 'in_progress', label: 'In corso' },
+        { value: 'suspended',   label: 'Sospeso' },
+        { value: 'completed',   label: 'Completato' },
+        { value: 'close',       label: 'Chiuso' },
+    ],
+};
+
+async function openActivityDetail(type, id) {
+    _sheetType = type;
+    _sheetId   = id;
+    _sheetData = null;
+
+    // Reset sheet UI
+    document.getElementById('sheet-loading').classList.remove('hidden');
+    document.getElementById('sheet-content').classList.add('hidden');
+    document.getElementById('sheet-header-badge').innerHTML = _sheetTypeBadgeHtml(type);
+
+    const sheet = document.getElementById('activity-sheet');
+    const panel = document.getElementById('activity-sheet-panel');
+    sheet.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        panel.style.transform = 'translateY(0)';
+    }));
+    feather.replace();
+
+    try {
+        const paths = {
+            calendar: `/api/technician/calendar-events/${id}`,
+            ticket:   `/api/technician/tickets/${id}`,
+            activity: `/api/technician/cart-activities/${id}`,
+        };
+        const res = await fetch(paths[type], { headers: { 'X-CSRF-TOKEN': CSRF } });
+        if (res.status === 401) { showSessionExpired(); closeActivitySheet(); return; }
+
+        const json = await res.json();
+        _sheetData = json.data ?? json;
+
+        if (type === 'activity' && _availableProducts === null) {
+            await _loadAvailableProducts();
+        }
+
+        _renderSheetContent();
+    } catch (e) {
+        document.getElementById('sheet-loading').innerHTML = `
+            <div class="text-center py-10">
+                <i data-feather="alert-circle" class="w-10 h-10 text-red-400 mx-auto mb-2"></i>
+                <p class="text-gray-500 text-sm mb-2">Impossibile caricare i dettagli.</p>
+                <button onclick="openActivityDetail('${type}',${id})" class="text-brand-600 text-sm font-medium">Riprova</button>
+            </div>`;
+        feather.replace();
+    }
+}
+
+function closeActivitySheet() {
+    const panel = document.getElementById('activity-sheet-panel');
+    panel.style.transform = 'translateY(100%)';
+    setTimeout(() => {
+        document.getElementById('activity-sheet').classList.add('hidden');
+        document.body.style.overflow = '';
+    }, 370);
+}
+
+function _sheetTypeBadgeHtml(type) {
+    const cfg = {
+        calendar: { label: 'Evento Calendario', cls: 'text-brand-700 bg-brand-50',   icon: 'calendar' },
+        ticket:   { label: 'Ticket',            cls: 'text-purple-700 bg-purple-50', icon: 'message-square' },
+        activity: { label: 'Installazione',      cls: 'text-amber-700 bg-amber-50',   icon: 'tool' },
+    }[type] ?? { label: type, cls: 'text-gray-700 bg-gray-100', icon: 'info' };
+    return `<span class="flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${cfg.cls}">
+        <i data-feather="${cfg.icon}" class="w-3.5 h-3.5"></i><span>${cfg.label}</span>
+    </span>`;
+}
+
+function _renderSheetContent() {
+    document.getElementById('sheet-loading').classList.add('hidden');
+    const el = document.getElementById('sheet-content');
+    el.classList.remove('hidden');
+    if (_sheetType === 'calendar') el.innerHTML = _buildCalendarContent(_sheetData);
+    if (_sheetType === 'ticket')   el.innerHTML = _buildTicketContent(_sheetData);
+    if (_sheetType === 'activity') el.innerHTML = _buildActivityContent(_sheetData);
+    feather.replace();
+}
+
+// ── Escape helper ─────────────────────────────────────────────────────────────
+function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Section builders ──────────────────────────────────────────────────────────
+function _infoRow(icon, text) {
+    if (!text) return '';
+    return `<div class="flex items-start space-x-2 text-sm text-gray-600">
+        <i data-feather="${icon}" class="w-4 h-4 flex-shrink-0 mt-0.5 text-gray-400"></i>
+        <span>${esc(text)}</span></div>`;
+}
+
+function _buildStatusSection(currentStatus) {
+    const opts = (SHEET_STATUS_OPTIONS[_sheetType] ?? []).map(o =>
+        `<option value="${o.value}"${currentStatus === o.value ? ' selected' : ''}>${o.label}</option>`
+    ).join('');
+    return `<div class="bg-gray-50 rounded-2xl p-4 space-y-3">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Stato</p>
+        <div class="flex items-center space-x-2">
+            <select id="sheet-status" class="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-brand-400">${opts}</select>
+            <button onclick="saveSheetStatus()" id="sheet-status-btn"
+                class="text-sm font-semibold bg-brand-600 text-white px-4 py-2.5 rounded-xl active:bg-brand-700 disabled:opacity-50 whitespace-nowrap">Salva</button>
+        </div>
+        <p id="sheet-status-fb" class="hidden text-xs text-green-600 font-medium">Stato aggiornato.</p>
+    </div>`;
+}
+
+function _buildNotesSection(notes = []) {
+    const list = (notes).map(n => `
+        <div class="border-l-2 border-brand-200 pl-3">
+            <p class="text-sm text-gray-700 leading-snug">${esc(n.body ?? n.note ?? '')}</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">${n.created_by ? esc(n.created_by) + ' · ' : ''}${formatDate(n.created_at)}</p>
+        </div>`).join('');
+    return `<div class="space-y-3">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Note</p>
+        ${list ? `<div class="space-y-3">${list}</div>` : '<p class="text-xs text-gray-400">Nessuna nota.</p>'}
+        <textarea id="sheet-note-input" rows="3" placeholder="Scrivi una nota…"
+            class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-brand-400 bg-gray-50 placeholder-gray-400"></textarea>
+        <button onclick="saveSheetNote()" id="sheet-note-btn"
+            class="w-full text-sm font-semibold bg-gray-800 text-white py-2.5 rounded-xl active:bg-gray-900 disabled:opacity-50">Aggiungi nota</button>
+        <p id="sheet-note-fb" class="hidden text-xs text-green-600 font-medium">Nota aggiunta.</p>
+    </div>`;
+}
+
+function _buildAttachmentsSection(attachments = []) {
+    const thumbs = attachments.map(a =>
+        `<a href="${a.url}" target="_blank" rel="noopener" class="block aspect-square rounded-xl overflow-hidden bg-gray-100 active:opacity-80">
+            <img src="${a.url}" alt="" class="w-full h-full object-cover" loading="lazy">
+        </a>`).join('');
+    return `<div class="space-y-3" id="sheet-attachments-wrap">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Immagini</p>
+        ${attachments.length
+            ? `<div class="grid grid-cols-3 gap-2">${thumbs}</div>`
+            : '<p class="text-xs text-gray-400">Nessuna immagine.</p>'}
+        <label class="flex items-center justify-center space-x-2 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 active:bg-gray-50 cursor-pointer">
+            <i data-feather="camera" class="w-4 h-4"></i>
+            <span id="sheet-upload-txt">Carica immagini</span>
+            <input type="file" accept="image/*" multiple class="hidden" onchange="uploadSheetImages(this)">
+        </label>
+        <p id="sheet-upload-fb" class="hidden text-xs text-green-600 font-medium">Immagini caricate.</p>
+    </div>`;
+}
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+function _buildCalendarContent(d) {
+    const histories = (d.histories ?? []).map(h =>
+        `<div class="border-l-2 border-gray-200 pl-3">
+            <p class="text-xs text-gray-500">${esc(h.note ?? '')}</p>
+            <p class="text-[10px] text-gray-400">${formatDate(h.created_at)}</p>
+        </div>`).join('');
+    return `
+    <div class="space-y-1">
+        <h2 class="text-lg font-bold text-gray-900 leading-snug">${esc(d.title ?? '')}</h2>
+        ${_infoRow('user', d.customer)}
+        ${_infoRow('clock', formatDate(d.start_date, d.start_time) + ' → ' + formatDate(d.end_date, d.end_time))}
+        ${d.description ? `<p class="text-sm text-gray-500 pt-1">${esc(d.description)}</p>` : ''}
+    </div>
+    ${_buildStatusSection(d.status)}
+    ${_buildNotesSection(d.notes ?? [])}
+    ${_buildAttachmentsSection(d.attachments ?? [])}
+    ${histories ? `<div class="space-y-2">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Storico</p>
+        <div class="space-y-2">${histories}</div>
+    </div>` : ''}`;
+}
+
+// ── Ticket ────────────────────────────────────────────────────────────────────
+function _buildTicketContent(d) {
+    return `
+    <div class="space-y-1">
+        <div class="flex items-center space-x-2 mb-1">${levelBadge(d.ticket_level)}<span class="text-[10px] text-gray-400">#${d.id}</span></div>
+        <h2 class="text-base font-bold text-gray-900">${esc(d.customer ?? '')}</h2>
+        ${_infoRow('clock', formatDate(d.updated_at))}
+        ${d.messages_count ? `<p class="text-xs text-gray-400">${d.messages_count} messaggi</p>` : ''}
+    </div>
+    ${_buildStatusSection(d.ticket_status)}
+    ${_buildNotesSection(d.notes ?? [])}
+    ${_buildAttachmentsSection(d.attachments ?? [])}`;
+}
+
+// ── Cart Activity ─────────────────────────────────────────────────────────────
+function _buildActivityContent(d) {
+    const offer = d.offer;
+    const offerHtml = offer ? `
+    <div class="bg-brand-50 border border-brand-100 rounded-2xl p-4 space-y-1">
+        <p class="text-xs font-bold text-brand-600 uppercase tracking-wide">Offerta acquistata</p>
+        <p class="text-base font-bold text-gray-900">${esc(offer.name ?? '')}</p>
+        ${offer.description ? `<p class="text-xs text-gray-500">${esc(offer.description)}</p>` : ''}
+        <p class="text-sm font-semibold text-brand-700">€ ${parseFloat(offer.price ?? 0).toFixed(2)} / mese</p>
+    </div>` : '';
+
+    return `
+    <div class="space-y-1">
+        <h2 class="text-lg font-bold text-gray-900">${esc(d.customer ?? '')}</h2>
+        ${_infoRow('map-pin', d.full_address)}
+        ${_infoRow('clock', (d.event_at ? formatDate(d.event_at) : '') + (d.event_time ? ' ' + d.event_time.slice(0,5) : ''))}
+        ${d.is_first ? '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent-400/20 text-yellow-700 mt-1">Prima installazione</span>' : ''}
+    </div>
+    ${offerHtml}
+    ${_buildStatusSection(d.status)}
+    ${_buildExtraProductsSection(d)}
+    ${_buildAttachmentsSection(d.attachments ?? [])}
+    ${_buildNotesSection(d.notes ?? [])}`;
+}
+
+function _buildExtraProductsSection(d) {
+    const extras = d.extra_products ?? [];
+    const total  = parseFloat(d.extra_products_total ?? 0);
+
+    const rows = extras.map(ep => `
+        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <div class="flex-1 min-w-0 mr-3">
+                <p class="text-sm font-medium text-gray-800 truncate">${esc(ep.name)}</p>
+                <p class="text-xs text-gray-400">€ ${parseFloat(ep.price).toFixed(2)} × ${ep.quantity}</p>
+            </div>
+            <div class="flex items-center space-x-2 flex-shrink-0">
+                <span class="text-sm font-semibold text-gray-700">€ ${parseFloat(ep.subtotal).toFixed(2)}</span>
+                <button onclick="removeExtraProduct(${d.id},${ep.id})" class="p-1 text-red-400 active:text-red-600">
+                    <i data-feather="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>`).join('');
+
+    const prodOpts = (_availableProducts ?? []).map(p =>
+        `<option value="${p.id}" data-price="${p.price}">[${p.type === 'supplement' ? 'Suppl.' : 'Prod.'}] ${esc(p.name)} — €${parseFloat(p.price).toFixed(2)}</option>`
+    ).join('');
+
+    return `<div class="space-y-3" id="sheet-extras-wrap">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Prodotti aggiuntivi</p>
+        <div class="divide-y divide-gray-100 rounded-xl border border-gray-100 px-3">
+            ${rows || '<p class="text-xs text-gray-400 py-3">Nessun prodotto aggiunto.</p>'}
+        </div>
+        <div class="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-xl">
+            <span class="text-sm font-semibold text-gray-600">Totale extra</span>
+            <span class="text-sm font-bold text-gray-900" id="sheet-extras-total">€ ${total.toFixed(2)}</span>
+        </div>
+        <div class="space-y-2 pt-1">
+            <select id="sheet-product-select" class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-brand-400">
+                <option value="">Seleziona prodotto…</option>${prodOpts}
+            </select>
+            <div class="flex items-center space-x-2">
+                <input type="number" id="sheet-product-qty" value="1" min="1"
+                    class="w-20 text-sm text-center border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-400 bg-white">
+                <button onclick="addExtraProduct(${d.id})" id="sheet-add-product-btn"
+                    class="flex-1 text-sm font-semibold bg-brand-600 text-white py-2.5 rounded-xl active:bg-brand-700 disabled:opacity-50">Aggiungi</button>
+            </div>
+        </div>
+        <p id="sheet-extra-fb" class="hidden text-xs text-green-600 font-medium">Prodotto aggiunto.</p>
+    </div>`;
+}
+
+// ── Sheet actions ─────────────────────────────────────────────────────────────
+async function saveSheetStatus() {
+    const status = document.getElementById('sheet-status').value;
+    const btn    = document.getElementById('sheet-status-btn');
+    const fb     = document.getElementById('sheet-status-fb');
+    btn.disabled = true; btn.textContent = '…';
+
+    const urls    = { calendar: `/api/technician/calendar-events/${_sheetId}`, ticket: `/api/technician/tickets/${_sheetId}`, activity: `/api/technician/cart-activities/${_sheetId}` };
+    const bodies  = { calendar: { status }, ticket: { ticket_status: status }, activity: { status } };
+    const methods = { calendar: 'PATCH', ticket: 'PUT', activity: 'PATCH' };
+
+    try {
+        const res = await fetch(urls[_sheetType], {
+            method: methods[_sheetType],
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            body: JSON.stringify(bodies[_sheetType]),
+        });
+        if (res.status === 401) { showSessionExpired(); return; }
+        if (res.ok) {
+            fb.classList.remove('hidden');
+            setTimeout(() => fb.classList.add('hidden'), 2500);
+            if (_sheetData) _sheetData.status = status;
+            // Aggiorna allTickets se ticket
+            if (_sheetType === 'ticket') {
+                const t = allTickets.find(t => t.id === _sheetId);
+                if (t) t.ticket_status = status;
+                const c = document.getElementById('agenda-tickets-cards');
+                if (c) { c.innerHTML = renderTicketCards(); feather.replace(); }
+            }
+        }
+    } catch (_) {}
+    btn.disabled = false; btn.textContent = 'Salva';
+}
+
+async function saveSheetNote() {
+    const input = document.getElementById('sheet-note-input');
+    const body  = input.value.trim();
+    if (!body) return;
+    const btn = document.getElementById('sheet-note-btn');
+    const fb  = document.getElementById('sheet-note-fb');
+    btn.disabled = true; btn.textContent = '…';
+
+    const urls    = { calendar: `/api/technician/calendar-events/${_sheetId}`, ticket: `/api/technician/tickets/${_sheetId}/notes`, activity: `/api/technician/cart-activities/${_sheetId}` };
+    const bodies  = { calendar: { note: body }, ticket: { body }, activity: { note: body } };
+    const methods = { calendar: 'PATCH', ticket: 'POST', activity: 'PATCH' };
+
+    try {
+        const res = await fetch(urls[_sheetType], {
+            method: methods[_sheetType],
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            body: JSON.stringify(bodies[_sheetType]),
+        });
+        if (res.status === 401) { showSessionExpired(); return; }
+        if (res.ok) {
+            const json = await res.json();
+            input.value = '';
+            if (!_sheetData.notes) _sheetData.notes = [];
+            _sheetData.notes.push(json.data ?? { body, created_at: new Date().toISOString() });
+            _renderSheetContent();
+            fb.classList.remove('hidden');
+            setTimeout(() => fb.classList.add('hidden'), 2500);
+        }
+    } catch (_) {}
+    btn.disabled = false; btn.textContent = 'Aggiungi nota';
+}
+
+async function uploadSheetImages(input) {
+    if (!input.files.length) return;
+    const txtEl = document.getElementById('sheet-upload-txt');
+    const fb    = document.getElementById('sheet-upload-fb');
+    txtEl.textContent = 'Caricamento…';
+
+    const urls = {
+        calendar: `/api/technician/calendar-events/${_sheetId}/attachments`,
+        ticket:   `/api/technician/tickets/${_sheetId}/attachments`,
+        activity: `/api/technician/cart-activities/${_sheetId}/attachments`,
+    };
+
+    const formData = new FormData();
+    for (const f of input.files) formData.append('images[]', f);
+
+    try {
+        const res = await fetch(urls[_sheetType], { method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF }, body: formData });
+        if (res.status === 401) { showSessionExpired(); return; }
+        if (res.ok) {
+            const json = await res.json();
+            if (_sheetData) {
+                _sheetData.attachments = json.data?.attachments ?? _sheetData.attachments ?? [];
+                const wrap = document.getElementById('sheet-attachments-wrap');
+                if (wrap) { wrap.outerHTML = _buildAttachmentsSection(_sheetData.attachments); feather.replace(); }
+            }
+            fb.classList.remove('hidden');
+            setTimeout(() => fb.classList.add('hidden'), 2500);
+        }
+    } catch (_) {}
+    input.value = '';
+    const txt2 = document.getElementById('sheet-upload-txt');
+    if (txt2) txt2.textContent = 'Carica immagini';
+}
+
+async function _loadAvailableProducts() {
+    try {
+        const res = await fetch('/api/technician/products?types[]=product&types[]=supplement', { headers: { 'X-CSRF-TOKEN': CSRF } });
+        if (res.ok) { const j = await res.json(); _availableProducts = j.data ?? []; }
+        else _availableProducts = [];
+    } catch (_) { _availableProducts = []; }
+}
+
+async function addExtraProduct(activityId) {
+    const sel = document.getElementById('sheet-product-select');
+    const qty = parseInt(document.getElementById('sheet-product-qty').value);
+    const pid = parseInt(sel.value);
+    if (!pid || qty < 1) return;
+
+    const btn = document.getElementById('sheet-add-product-btn');
+    const fb  = document.getElementById('sheet-extra-fb');
+    btn.disabled = true; btn.textContent = '…';
+
+    try {
+        const res = await fetch(`/api/technician/cart-activities/${activityId}/extra-products`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            body: JSON.stringify({ product_id: pid, quantity: qty }),
+        });
+        if (res.status === 401) { showSessionExpired(); return; }
+        if (res.ok) {
+            await _refreshExtras(activityId);
+            fb.classList.remove('hidden');
+            setTimeout(() => fb.classList.add('hidden'), 2500);
+            document.getElementById('sheet-product-qty').value = 1;
+        }
+    } catch (_) {}
+    btn.disabled = false; btn.textContent = 'Aggiungi';
+}
+
+async function removeExtraProduct(activityId, extraProductId) {
+    try {
+        const res = await fetch(`/api/technician/cart-activities/${activityId}/extra-products/${extraProductId}`, {
+            method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF },
+        });
+        if (res.status === 401) { showSessionExpired(); return; }
+        if (res.ok) await _refreshExtras(activityId);
+    } catch (_) {}
+}
+
+async function _refreshExtras(activityId) {
+    const res = await fetch(`/api/technician/cart-activities/${activityId}`, { headers: { 'X-CSRF-TOKEN': CSRF } });
+    if (!res.ok) return;
+    const json = await res.json();
+    _sheetData = json.data ?? json;
+    const wrap = document.getElementById('sheet-extras-wrap');
+    if (wrap) { wrap.outerHTML = _buildExtraProductsSection(_sheetData); feather.replace(); }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
