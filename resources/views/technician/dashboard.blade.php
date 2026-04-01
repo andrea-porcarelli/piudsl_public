@@ -95,6 +95,36 @@
     </div>
 </div>
 
+<!-- Report Modal -->
+<div id="report-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end justify-center p-4 pb-8">
+    <div class="bg-white rounded-2xl w-full max-w-lg shadow-xl">
+        <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+            <div class="flex items-center space-x-2">
+                <i data-feather="alert-triangle" class="w-4 h-4 text-orange-500"></i>
+                <h3 class="text-base font-bold text-gray-900">Segnalazione al backoffice</h3>
+            </div>
+            <button onclick="closeReportModal()" class="p-1 text-gray-400 active:text-gray-600">
+                <i data-feather="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="px-5 py-4 space-y-4">
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-wide">Data</label>
+                <input type="date" id="report-date"
+                    class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 focus:outline-none focus:border-brand-400">
+            </div>
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-wide">Nota</label>
+                <textarea id="report-note" rows="4" placeholder="Descrivi la segnalazione…"
+                    class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-brand-400 bg-gray-50 placeholder-gray-400"></textarea>
+            </div>
+            <p id="report-err" class="hidden text-xs text-red-500 font-medium"></p>
+            <button onclick="saveReport()" id="report-submit-btn"
+                class="w-full text-sm font-semibold bg-orange-500 text-white py-3 rounded-xl active:bg-orange-600 disabled:opacity-50">Invia segnalazione</button>
+        </div>
+    </div>
+</div>
+
 <!-- Main Content -->
 <main class="content-area pt-14">
 
@@ -102,10 +132,16 @@
     <section id="section-agenda" class="px-4 py-4 space-y-3">
         <div class="flex items-center justify-between mb-1">
             <h2 class="text-base font-semibold text-gray-700">Agenda</h2>
-            <button onclick="loadAgenda()" class="text-brand-600 text-sm font-medium flex items-center space-x-1">
-                <i data-feather="refresh-cw" class="w-3.5 h-3.5"></i>
-                <span>Aggiorna</span>
-            </button>
+            <div class="flex items-center space-x-3">
+                <button onclick="openReportModal()" class="text-orange-500 text-sm font-medium flex items-center space-x-1">
+                    <i data-feather="alert-triangle" class="w-3.5 h-3.5"></i>
+                    <span>Segnala</span>
+                </button>
+                <button onclick="loadAgenda()" class="text-brand-600 text-sm font-medium flex items-center space-x-1">
+                    <i data-feather="refresh-cw" class="w-3.5 h-3.5"></i>
+                    <span>Aggiorna</span>
+                </button>
+            </div>
         </div>
 
         <!-- Navigatore data -->
@@ -1080,75 +1116,57 @@ function _buildFormSection(currentStatus, notes = []) {
     </div>`;
 }
 
-function _buildReportSection(activityId) {
-    const today = new Date().toISOString().slice(0, 10);
-    return `<details class="group" id="sheet-report-wrap">
-        <summary class="flex items-center justify-between w-full py-3 px-4 bg-orange-50 border border-orange-100 rounded-2xl cursor-pointer list-none">
-            <span class="flex items-center space-x-2 text-sm font-semibold text-orange-700">
-                <i data-feather="alert-triangle" class="w-4 h-4"></i>
-                <span>Segnala al backoffice</span>
-            </span>
-            <i data-feather="chevron-down" class="w-4 h-4 text-orange-400 transition-transform group-open:rotate-180"></i>
-        </summary>
-        <div class="mt-2 bg-gray-50 rounded-2xl p-4 space-y-3">
-            <div class="space-y-1">
-                <label class="text-xs font-bold text-gray-400 uppercase tracking-wide">Data</label>
-                <input type="date" id="sheet-report-date" value="${today}"
-                    class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-brand-400">
-            </div>
-            <div class="space-y-1">
-                <label class="text-xs font-bold text-gray-400 uppercase tracking-wide">Nota</label>
-                <textarea id="sheet-report-note" rows="3" placeholder="Descrivi la segnalazione…"
-                    class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-brand-400 bg-white placeholder-gray-400"></textarea>
-            </div>
-            <button onclick="saveReport(${activityId})" id="sheet-report-btn"
-                class="w-full text-sm font-semibold bg-orange-500 text-white py-3 rounded-xl active:bg-orange-600 disabled:opacity-50">Invia segnalazione</button>
-            <p id="sheet-report-fb" class="hidden text-xs text-green-600 font-medium text-center">Segnalazione inviata.</p>
-            <p id="sheet-report-err" class="hidden text-xs text-red-500 font-medium text-center"></p>
-        </div>
-    </details>`;
+function openReportModal() {
+    document.getElementById('report-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('report-note').value = '';
+    document.getElementById('report-err').classList.add('hidden');
+    document.getElementById('report-note').classList.remove('border-red-400');
+    document.getElementById('report-submit-btn').disabled = false;
+    document.getElementById('report-submit-btn').textContent = 'Invia segnalazione';
+    document.getElementById('report-modal').classList.remove('hidden');
+    feather.replace();
 }
 
-async function saveReport(activityId) {
-    const date    = document.getElementById('sheet-report-date').value;
-    const note    = document.getElementById('sheet-report-note').value.trim();
-    const btn     = document.getElementById('sheet-report-btn');
-    const fb      = document.getElementById('sheet-report-fb');
-    const errEl   = document.getElementById('sheet-report-err');
+function closeReportModal() {
+    document.getElementById('report-modal').classList.add('hidden');
+}
+
+async function saveReport() {
+    const date  = document.getElementById('report-date').value;
+    const note  = document.getElementById('report-note').value.trim();
+    const btn   = document.getElementById('report-submit-btn');
+    const errEl = document.getElementById('report-err');
 
     if (!note) {
-        document.getElementById('sheet-report-note').classList.add('border-red-400');
-        document.getElementById('sheet-report-note').focus();
+        document.getElementById('report-note').classList.add('border-red-400');
+        document.getElementById('report-note').focus();
         return;
     }
-    document.getElementById('sheet-report-note').classList.remove('border-red-400');
+    document.getElementById('report-note').classList.remove('border-red-400');
 
     btn.disabled = true; btn.textContent = '…';
-    fb.classList.add('hidden');
     errEl.classList.add('hidden');
 
     try {
-        const res = await fetch(`/api/technician/cart-activities/${activityId}/reports`, {
+        const res = await fetch('/api/technician/reports', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
             body: JSON.stringify({ date, note }),
         });
         if (res.status === 401) { showSessionExpired(); return; }
         if (res.ok) {
-            document.getElementById('sheet-report-note').value = '';
-            document.getElementById('sheet-report-date').value = new Date().toISOString().slice(0, 10);
-            fb.classList.remove('hidden');
-            setTimeout(() => fb.classList.add('hidden'), 3000);
+            closeReportModal();
         } else {
             const json = await res.json();
             errEl.textContent = json.message ?? 'Errore durante l\'invio.';
             errEl.classList.remove('hidden');
+            btn.disabled = false; btn.textContent = 'Invia segnalazione';
         }
     } catch (_) {
         errEl.textContent = 'Errore di rete. Riprova.';
         errEl.classList.remove('hidden');
+        btn.disabled = false; btn.textContent = 'Invia segnalazione';
     }
-    btn.disabled = false; btn.textContent = 'Invia segnalazione';
 }
 
 function _buildAttachmentsSection(attachments = []) {
@@ -1226,8 +1244,7 @@ function _buildActivityContent(d) {
     ${offerHtml}
     ${_buildExtraProductsSection(d)}
     ${_buildAttachmentsSection(d.attachments ?? [])}
-    ${_buildFormSection(d.status, d.notes ?? [])}
-    ${_buildReportSection(d.id)}`;
+    ${_buildFormSection(d.status, d.notes ?? [])}`;
 }
 
 function _buildExtraProductsSection(d) {

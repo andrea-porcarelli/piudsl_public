@@ -343,13 +343,11 @@ Rimuove un prodotto extra precedentemente aggiunto.
 
 ---
 
-### 5. SEGNALAZIONI (da installazione)
+### 5. SEGNALAZIONI
 
-#### POST /cart-activities/{id}/reports
+#### POST /reports
 
-Crea un nuovo evento calendario di tipo segnalazione, collegato all'installazione `{id}`, destinato al backoffice.
-
-Il campo `cart_activity_id` viene derivato dal path — non serve nel body.
+Crea una nuova segnalazione per il backoffice. Disponibile in qualsiasi momento dalla sezione Agenda, non legata a una specifica installazione.
 
 **Headers:**
 ```
@@ -362,7 +360,7 @@ Content-Type: application/json
 
 | Campo | Tipo | Obbligatorio | Descrizione |
 |-------|------|:------------:|-------------|
-| `date` | string (`YYYY-MM-DD`) | sì | Data della segnalazione |
+| `date` | string (`YYYY-MM-DD`) | sì | Data della segnalazione (default lato client: oggi) |
 | `note` | string | sì | Descrizione della segnalazione (max 2000 caratteri) |
 
 **Esempio richiesta:**
@@ -380,7 +378,7 @@ Content-Type: application/json
     "id": 42,
     "date": "2026-04-01",
     "note": "Il cliente non era presente all'appuntamento.",
-    "cart_activity_id": 7,
+    "technician_id": 5,
     "created_at": "2026-04-01T09:30:00Z"
   }
 }
@@ -391,7 +389,6 @@ Content-Type: application/json
 | Codice | Causa |
 |--------|-------|
 | `422` | Campi mancanti o non validi (`date` formato errato, `note` vuota) |
-| `404` | `cart_activity_id` non trovato o non appartenente al tecnico autenticato |
 | `401` | Token di sessione scaduto o non valido |
 
 ---
@@ -412,7 +409,7 @@ Content-Type: application/json
 | `POST` | `/cart-activities/{id}/attachments` | Carica immagini su installazione |
 | `POST` | `/cart-activities/{id}/extra-products` | Aggiungi prodotto extra |
 | `DELETE` | `/cart-activities/{id}/extra-products/{extra_product_id}` | Rimuovi prodotto extra |
-| `POST` | `/cart-activities/{id}/reports` | Crea segnalazione per il backoffice |
+| `POST` | `/reports` | Crea segnalazione per il backoffice |
 
 ---
 
