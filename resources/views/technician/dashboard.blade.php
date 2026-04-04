@@ -447,7 +447,8 @@ async function loadAgenda() {
 
         // Filtra eventi e attività per la data selezionata, salva globalmente
         allCalendarEvents = (calJson.data ?? []).filter(ev =>
-            (ev.start_date ?? '') <= date && (ev.end_date ?? ev.start_date ?? '') >= date
+            ev.event_type === 'segnalazione' ||
+            ((ev.start_date ?? '') <= date && (ev.end_date ?? ev.start_date ?? '') >= date)
         );
         allActivities = (actJson.data ?? []).filter(act => act.event_at === date);
         allTickets    = tickJson.data ?? [];
