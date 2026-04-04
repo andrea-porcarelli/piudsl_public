@@ -299,6 +299,7 @@
 feather.replace();
 
 const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+const CURRENT_USER_ID = {{ $userId ?? 'null' }};
 
 // ── Loaded flags (lazy loading) ──────────────────────────────────────────────
 const loaded = { agenda: false, invoices: false };
@@ -306,6 +307,11 @@ const loaded = { agenda: false, invoices: false };
 // ── Tickets state ─────────────────────────────────────────────────────────────
 let allTickets = [];
 let activeFilter = 'all';
+
+// ── Calendar events state ─────────────────────────────────────────────────────
+let allCalendarEvents = [];
+let allActivities     = [];
+let calendarFilter    = 'open';
 
 // ── Session expired ──────────────────────────────────────────────────────────
 function showSessionExpired() {
@@ -439,51 +445,88 @@ async function loadAgenda() {
 
         const [calJson, actJson, tickJson] = await Promise.all([calRes.json(), actRes.json(), tickRes.json()]);
 
-        // Filtra eventi e attività per la data selezionata
-        const events = (calJson.data ?? []).filter(ev =>
+        // Filtra eventi e attività per la data selezionata, salva globalmente
+        allCalendarEvents = (calJson.data ?? []).filter(ev =>
             (ev.start_date ?? '') <= date && (ev.end_date ?? ev.start_date ?? '') >= date
         );
-        const activities = (actJson.data ?? []).filter(act => act.event_at === date);
-        allTickets = tickJson.data ?? [];
+        allActivities = (actJson.data ?? []).filter(act => act.event_at === date);
+        allTickets    = tickJson.data ?? [];
+        calendarFilter = 'open';
 
-        // Unifica e ordina per orario
-        const combined = [
-            ...events.map(ev     => ({ type: 'calendar', time: ev.start_time   || '00:00', data: ev })),
-            ...activities.map(act => ({ type: 'activity', time: act.event_time || '00:00', data: act })),
-        ].sort((a, b) => a.time > b.time ? 1 : -1);
-
-        if (!combined.length && !allTickets.length) {
+        if (!allCalendarEvents.length && !allActivities.length && !allTickets.length) {
             showState('agenda', 'empty');
             loaded.agenda = true;
             return;
         }
 
-        let html = combined.map(item =>
-            item.type === 'calendar' ? renderCalendarCard(item.data) : renderActivityCard(item.data)
-        ).join('');
-
-        if (allTickets.length) html += renderTicketsBlock();
-
-        document.getElementById('agenda-list').innerHTML = html;
+        renderAgendaList();
         showState('agenda', 'list');
         loaded.agenda = true;
-        feather.replace();
 
     } catch (e) {
         showState('agenda', 'error');
     }
 }
 
+function getFilteredCalendarEvents() {
+    if (calendarFilter === 'all') return allCalendarEvents;
+    return allCalendarEvents.filter(ev =>
+        ev.status === calendarFilter || ev.event_type === 'segnalazione'
+    );
+}
+
+function renderAgendaList() {
+    const filtered = getFilteredCalendarEvents();
+    const combined = [
+        ...filtered.map(ev   => ({ type: 'calendar', time: ev.start_time   || '00:00', data: ev })),
+        ...allActivities.map(act => ({ type: 'activity', time: act.event_time || '00:00', data: act })),
+    ].sort((a, b) => a.time > b.time ? 1 : -1);
+
+    let html = renderCalendarFilterBar();
+    html += combined.map(item =>
+        item.type === 'calendar' ? renderCalendarCard(item.data) : renderActivityCard(item.data)
+    ).join('');
+    if (allTickets.length) html += renderTicketsBlock();
+
+    document.getElementById('agenda-list').innerHTML = html;
+    feather.replace();
+}
+
+function renderCalendarFilterBar() {
+    return `
+    <div class="flex space-x-2 overflow-x-auto pb-1">
+        <button onclick="filterCalendarEvents('open')" id="cal-filter-open"
+            class="cal-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${calendarFilter === 'open' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Aperti</button>
+        <button onclick="filterCalendarEvents('all')" id="cal-filter-all"
+            class="cal-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${calendarFilter === 'all' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Tutti</button>
+    </div>`;
+}
+
+function filterCalendarEvents(status) {
+    calendarFilter = status;
+    renderAgendaList();
+}
+
 function renderCalendarCard(ev) {
-    const color = ev.color || '#0284c7';
+    const isSegnalazione = ev.event_type === 'segnalazione';
+    const isMine = isSegnalazione && ev.technician_id === CURRENT_USER_ID;
+    const color = ev.color || (isSegnalazione ? '#f97316' : '#0284c7');
     const histories = (ev.histories ?? []).map(h =>
         `<li class="text-xs text-gray-500 border-l-2 border-gray-200 pl-2 py-0.5">${h.note} <span class="text-gray-400 text-[10px]">${formatDate(h.created_at)}</span></li>`
     ).join('');
+    const typeLabel = isSegnalazione
+        ? `<span class="text-[10px] font-bold uppercase tracking-wide text-orange-400">Segnalazione</span>`
+        : `<span class="text-[10px] font-bold uppercase tracking-wide text-gray-400">Evento calendario</span>`;
+    const mineBadge = isMine
+        ? `<span class="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full"><i data-feather="user" class="w-2.5 h-2.5"></i> La tua segnalazione</span>`
+        : '';
+    const borderClass = isSegnalazione ? 'border-orange-100' : 'border-gray-100';
     return `
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm border ${borderClass} overflow-hidden">
         <div class="h-1" style="background:${color}"></div>
-        <div class="px-4 pt-2 pb-0">
-            <span class="text-[10px] font-bold uppercase tracking-wide text-gray-400">Evento calendario</span>
+        <div class="px-4 pt-2 pb-0 flex items-center justify-between">
+            ${typeLabel}
+            ${mineBadge}
         </div>
         <div class="p-4 pt-2">
             <div class="flex items-start justify-between gap-2 mb-2">

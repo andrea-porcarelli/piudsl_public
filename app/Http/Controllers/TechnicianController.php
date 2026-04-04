@@ -26,6 +26,7 @@ class TechnicianController extends Controller
     {
         return view('technician.dashboard', [
             'userName'   => $request->session()->get('user_name'),
+            'userId'     => $request->session()->get('user_id'),
             'mapsApiKey' => config('services.google.maps_api_key', ''),
         ]);
     }
