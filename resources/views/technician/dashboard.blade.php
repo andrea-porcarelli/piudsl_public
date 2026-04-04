@@ -133,6 +133,10 @@
         <div class="flex items-center justify-between mb-1">
             <h2 class="text-base font-semibold text-gray-700">Agenda</h2>
             <div class="flex items-center space-x-3">
+                <button onclick="openCalOverview()" class="text-brand-600 text-sm font-medium flex items-center space-x-1">
+                    <i data-feather="grid" class="w-3.5 h-3.5"></i>
+                    <span>Panoramica</span>
+                </button>
                 <button onclick="openReportModal()" class="text-orange-500 text-sm font-medium flex items-center space-x-1">
                     <i data-feather="alert-triangle" class="w-3.5 h-3.5"></i>
                     <span>Segnala</span>
@@ -281,6 +285,59 @@
            transition-all duration-300 opacity-0 translate-y-0">
     <i data-feather="check-circle" class="w-4 h-4 flex-shrink-0"></i>
     <span>Fattura segnata come consegnata</span>
+</div>
+
+<!-- ===== CALENDAR OVERVIEW MODAL ===== -->
+<div id="cal-overview" class="hidden fixed inset-0 z-50 flex flex-col bg-gray-50" style="padding-top: env(safe-area-inset-top)">
+    <!-- Header -->
+    <div class="flex-shrink-0 flex items-center justify-between px-4 h-14 bg-brand-700 text-white shadow">
+        <button onclick="closeCalOverview()" class="p-2 -ml-2 rounded-lg hover:bg-white/10 transition-colors">
+            <i data-feather="arrow-left" class="w-5 h-5"></i>
+        </button>
+        <span class="text-sm font-semibold">Panoramica aperti</span>
+        <div class="w-9"></div>
+    </div>
+    <!-- Loading -->
+    <div id="cal-ov-loading" class="flex-1 flex items-center justify-center">
+        <div class="space-y-3 w-full px-4">
+            <div class="skeleton h-8 rounded-xl"></div>
+            <div class="skeleton h-64 rounded-2xl"></div>
+            <div class="skeleton h-24 rounded-2xl"></div>
+        </div>
+    </div>
+    <!-- Content -->
+    <div id="cal-ov-content" class="hidden flex-1 overflow-y-auto pb-8" style="padding-bottom: env(safe-area-inset-bottom)">
+        <!-- Month nav -->
+        <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
+            <button onclick="navCalOv(-1)" class="p-2 rounded-xl text-gray-500 active:bg-gray-100">
+                <i data-feather="chevron-left" class="w-5 h-5"></i>
+            </button>
+            <span id="cal-ov-month-label" class="text-sm font-bold text-gray-800"></span>
+            <button onclick="navCalOv(1)" class="p-2 rounded-xl text-gray-500 active:bg-gray-100">
+                <i data-feather="chevron-right" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <!-- Day-of-week headers -->
+        <div class="grid grid-cols-7 bg-white border-b border-gray-100 px-2">
+            <div class="text-center text-[10px] font-bold text-gray-400 py-1.5">Lu</div>
+            <div class="text-center text-[10px] font-bold text-gray-400 py-1.5">Ma</div>
+            <div class="text-center text-[10px] font-bold text-gray-400 py-1.5">Me</div>
+            <div class="text-center text-[10px] font-bold text-gray-400 py-1.5">Gi</div>
+            <div class="text-center text-[10px] font-bold text-gray-400 py-1.5">Ve</div>
+            <div class="text-center text-[10px] font-bold text-gray-400 py-1.5">Sa</div>
+            <div class="text-center text-[10px] font-bold text-gray-400 py-1.5">Do</div>
+        </div>
+        <!-- Grid -->
+        <div id="cal-ov-grid" class="bg-white px-2 pb-2 border-b border-gray-100"></div>
+        <!-- Legend -->
+        <div class="flex items-center justify-center space-x-4 px-4 py-2 bg-white border-b border-gray-100">
+            <span class="flex items-center space-x-1 text-[10px] text-gray-500"><span class="w-2 h-2 rounded-full bg-sky-400 inline-block"></span><span>Evento</span></span>
+            <span class="flex items-center space-x-1 text-[10px] text-gray-500"><span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span><span>Attività</span></span>
+            <span class="flex items-center space-x-1 text-[10px] text-gray-500"><span class="w-2 h-2 rounded bg-purple-400 inline-block"></span><span>Ticket</span></span>
+        </div>
+        <!-- Day detail -->
+        <div id="cal-ov-detail" class="px-4 pt-4 space-y-3"></div>
+    </div>
 </div>
 
 <!-- Bottom Tab Bar -->
@@ -665,6 +722,206 @@ function filterAgendaTickets(status) {
     });
     const container = document.getElementById('agenda-tickets-cards');
     if (container) { container.innerHTML = renderTicketCards(); feather.replace(); }
+}
+
+// ── CALENDAR OVERVIEW ────────────────────────────────────────────────────────
+
+let _calOvYear       = null;
+let _calOvMonth      = null; // 0-indexed
+let _calOvData       = null; // { events, activities, tickets }
+let _calOvSelectedDay = null;
+
+const _CAL_MONTHS = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+                     'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+
+async function openCalOverview() {
+    const today = new Date();
+    _calOvYear  = today.getFullYear();
+    _calOvMonth = today.getMonth();
+    _calOvSelectedDay = null;
+    _calOvData  = null;
+
+    document.getElementById('cal-overview').classList.remove('hidden');
+    document.getElementById('cal-ov-loading').classList.remove('hidden');
+    document.getElementById('cal-ov-content').classList.add('hidden');
+    document.body.style.overflow = 'hidden';
+    feather.replace();
+
+    try {
+        const [calRes, actRes, tickRes] = await Promise.all([
+            fetch('/api/technician/calendar-events', { headers: { 'X-CSRF-TOKEN': CSRF } }),
+            fetch('/api/technician/cart-activities',  { headers: { 'X-CSRF-TOKEN': CSRF } }),
+            fetch('/api/technician/tickets',           { headers: { 'X-CSRF-TOKEN': CSRF } }),
+        ]);
+        if ([calRes, actRes, tickRes].some(r => r.status === 401)) { showSessionExpired(); closeCalOverview(); return; }
+
+        const [calJson, actJson, tickJson] = await Promise.all([calRes.json(), actRes.json(), tickRes.json()]);
+
+        _calOvData = {
+            events:     (calJson.data  ?? []).filter(ev  => ev.status === 'open'),
+            activities: (actJson.data  ?? []).filter(act => act.status === 'open'),
+            tickets:    (tickJson.data ?? []).filter(t   => t.ticket_status === 'open'),
+        };
+
+        document.getElementById('cal-ov-loading').classList.add('hidden');
+        document.getElementById('cal-ov-content').classList.remove('hidden');
+        _renderCalOvGrid();
+    } catch (e) {
+        document.getElementById('cal-ov-loading').innerHTML =
+            `<div class="text-center px-4">
+                <i data-feather="alert-circle" class="w-10 h-10 text-red-400 mx-auto mb-2"></i>
+                <p class="text-gray-500 text-sm mb-3">Impossibile caricare i dati.</p>
+                <button onclick="openCalOverview()" class="text-brand-600 text-sm font-medium">Riprova</button>
+             </div>`;
+        feather.replace();
+    }
+}
+
+function closeCalOverview() {
+    document.getElementById('cal-overview').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function navCalOv(delta) {
+    _calOvMonth += delta;
+    if (_calOvMonth > 11) { _calOvMonth = 0;  _calOvYear++; }
+    if (_calOvMonth < 0)  { _calOvMonth = 11; _calOvYear--; }
+    _calOvSelectedDay = null;
+    _renderCalOvGrid();
+}
+
+function _renderCalOvGrid() {
+    document.getElementById('cal-ov-month-label').textContent =
+        _CAL_MONTHS[_calOvMonth] + ' ' + _calOvYear;
+
+    const firstDay = new Date(_calOvYear, _calOvMonth, 1);
+    const daysInMonth = new Date(_calOvYear, _calOvMonth + 1, 0).getDate();
+    // Monday=0 offset
+    let startOffset = firstDay.getDay() - 1;
+    if (startOffset < 0) startOffset = 6;
+
+    const today = new Date().toISOString().slice(0, 10);
+    let html = '';
+
+    // Empty cells before first day
+    for (let i = 0; i < startOffset; i++) {
+        html += `<div class="aspect-square"></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = _calOvYear + '-'
+            + String(_calOvMonth + 1).padStart(2, '0') + '-'
+            + String(d).padStart(2, '0');
+
+        const hasEv  = _calOvData.events.some(ev =>
+            (ev.start_date ?? '') <= dateStr && (ev.end_date ?? ev.start_date ?? '') >= dateStr
+        );
+        const hasAct = _calOvData.activities.some(act => act.event_at === dateStr);
+        const hasTick = _calOvData.tickets.some(t =>
+            (t.updated_at ?? '').slice(0, 10) === dateStr
+        );
+
+        const isToday    = dateStr === today;
+        const isSelected = dateStr === _calOvSelectedDay;
+
+        const dots = (hasEv   ? `<span class="w-1.5 h-1.5 rounded-full bg-sky-400 inline-block"></span>` : '') +
+                     (hasAct  ? `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>` : '') +
+                     (hasTick ? `<span class="w-1.5 h-1.5 rounded bg-purple-400 inline-block"></span>` : '');
+
+        const cellBase = 'aspect-square flex flex-col items-center justify-center rounded-xl transition-colors active:opacity-70 relative';
+        const cellStyle = isSelected
+            ? `${cellBase} bg-brand-600 text-white`
+            : isToday
+            ? `${cellBase} ring-2 ring-brand-400 ring-inset text-brand-700 font-bold`
+            : (hasEv || hasAct || hasTick)
+            ? `${cellBase} bg-gray-50 active:bg-gray-100`
+            : `${cellBase} text-gray-300`;
+
+        html += `<button onclick="selectCalOvDay('${dateStr}')" class="${cellStyle}">
+            <span class="text-xs font-semibold leading-none mb-0.5">${d}</span>
+            <div class="flex items-center gap-0.5 h-2">${dots}</div>
+        </button>`;
+    }
+
+    document.getElementById('cal-ov-grid').innerHTML =
+        `<div class="grid grid-cols-7 gap-1 p-2">${html}</div>`;
+
+    _renderCalOvDetail();
+    feather.replace();
+}
+
+function selectCalOvDay(dateStr) {
+    _calOvSelectedDay = (_calOvSelectedDay === dateStr) ? null : dateStr;
+    _renderCalOvGrid();
+}
+
+function _renderCalOvDetail() {
+    const el = document.getElementById('cal-ov-detail');
+    if (!_calOvSelectedDay || !_calOvData) { el.innerHTML = ''; return; }
+
+    const d = _calOvSelectedDay;
+    const evs  = _calOvData.events.filter(ev =>
+        (ev.start_date ?? '') <= d && (ev.end_date ?? ev.start_date ?? '') >= d
+    );
+    const acts = _calOvData.activities.filter(act => act.event_at === d);
+    const ticks = _calOvData.tickets.filter(t => (t.updated_at ?? '').slice(0, 10) === d);
+
+    if (!evs.length && !acts.length && !ticks.length) {
+        el.innerHTML = `<p class="text-center text-sm text-gray-400 py-4">Nessun elemento aperto in questa data.</p>`;
+        return;
+    }
+
+    let html = `<p class="text-xs font-bold text-gray-400 uppercase tracking-wide">${_formatCalOvDate(d)}</p>`;
+
+    evs.forEach(ev => {
+        const color = ev.color || '#0284c7';
+        html += `<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="h-1" style="background:${color}"></div>
+            <div class="p-3">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold text-gray-900 leading-tight">${esc(ev.title ?? '')}</span>
+                    ${statusBadge(ev.status)}
+                </div>
+                ${ev.customer ? `<p class="text-[10px] text-gray-500 mt-1">${esc(ev.customer)}</p>` : ''}
+                ${ev.start_time ? `<p class="text-[10px] text-gray-400">${ev.start_time.slice(0,5)}${ev.end_time ? ' → '+ev.end_time.slice(0,5) : ''}</p>` : ''}
+            </div>
+        </div>`;
+    });
+
+    acts.forEach(act => {
+        html += `<div class="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
+            <div class="h-1 bg-amber-400"></div>
+            <div class="p-3">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold text-gray-900">${esc(act.customer ?? '')}</span>
+                    ${statusBadge(act.status)}
+                </div>
+                ${act.full_address ? `<p class="text-[10px] text-gray-500 mt-1">${esc(act.full_address)}</p>` : ''}
+                ${act.event_time ? `<p class="text-[10px] text-gray-400">${act.event_time.slice(0,5)}</p>` : ''}
+            </div>
+        </div>`;
+    });
+
+    ticks.forEach(t => {
+        html += `<div class="bg-white rounded-2xl shadow-sm border border-purple-50 overflow-hidden">
+            <div class="h-1 bg-purple-400"></div>
+            <div class="p-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1.5">${levelBadge(t.ticket_level)}${statusBadge(t.ticket_status)}</div>
+                    <span class="text-[10px] text-gray-400">#${t.id}</span>
+                </div>
+                <p class="text-xs font-semibold text-gray-900 mt-1">${esc(t.customer ?? '')}</p>
+            </div>
+        </div>`;
+    });
+
+    el.innerHTML = html;
+    feather.replace();
+}
+
+function _formatCalOvDate(dateStr) {
+    const [y, m, d] = dateStr.split('-');
+    return `${parseInt(d)} ${_CAL_MONTHS[parseInt(m) - 1]} ${y}`;
 }
 
 // ── FATTURE CARTACEE ──────────────────────────────────────────────────────────
