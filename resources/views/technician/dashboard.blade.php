@@ -247,7 +247,7 @@
 </main>
 
 <!-- ===== ACTIVITY DETAIL SHEET ===== -->
-<div id="activity-sheet" class="hidden fixed inset-0 z-50">
+<div id="activity-sheet" class="hidden fixed inset-0 z-[60]">
     <div class="absolute inset-0 bg-black/50" onclick="closeActivitySheet()"></div>
     <div id="activity-sheet-panel"
          class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl flex flex-col shadow-2xl"
@@ -875,7 +875,7 @@ function _renderCalOvDetail() {
 
     evs.forEach(ev => {
         const color = ev.color || '#0284c7';
-        html += `<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        html += `<button onclick="openActivityDetail('calendar', ${ev.id})" class="w-full text-left bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden active:opacity-70">
             <div class="h-1" style="background:${color}"></div>
             <div class="p-3">
                 <div class="flex items-center justify-between gap-2">
@@ -885,11 +885,11 @@ function _renderCalOvDetail() {
                 ${ev.customer ? `<p class="text-[10px] text-gray-500 mt-1">${esc(ev.customer)}</p>` : ''}
                 ${ev.start_time ? `<p class="text-[10px] text-gray-400">${ev.start_time.slice(0,5)}${ev.end_time ? ' → '+ev.end_time.slice(0,5) : ''}</p>` : ''}
             </div>
-        </div>`;
+        </button>`;
     });
 
     acts.forEach(act => {
-        html += `<div class="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
+        html += `<button onclick="openActivityDetail('activity', ${act.id})" class="w-full text-left bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden active:opacity-70">
             <div class="h-1 bg-amber-400"></div>
             <div class="p-3">
                 <div class="flex items-center justify-between gap-2">
@@ -899,11 +899,11 @@ function _renderCalOvDetail() {
                 ${act.full_address ? `<p class="text-[10px] text-gray-500 mt-1">${esc(act.full_address)}</p>` : ''}
                 ${act.event_time ? `<p class="text-[10px] text-gray-400">${act.event_time.slice(0,5)}</p>` : ''}
             </div>
-        </div>`;
+        </button>`;
     });
 
     ticks.forEach(t => {
-        html += `<div class="bg-white rounded-2xl shadow-sm border border-purple-50 overflow-hidden">
+        html += `<button onclick="openActivityDetail('ticket', ${t.id})" class="w-full text-left bg-white rounded-2xl shadow-sm border border-purple-50 overflow-hidden active:opacity-70">
             <div class="h-1 bg-purple-400"></div>
             <div class="p-3">
                 <div class="flex items-center justify-between gap-2">
@@ -912,7 +912,7 @@ function _renderCalOvDetail() {
                 </div>
                 <p class="text-xs font-semibold text-gray-900 mt-1">${esc(t.customer ?? '')}</p>
             </div>
-        </div>`;
+        </button>`;
     });
 
     el.innerHTML = html;
