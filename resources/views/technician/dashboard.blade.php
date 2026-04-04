@@ -1234,23 +1234,30 @@ function _buildAttachmentsSection(attachments = []) {
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
 function _buildCalendarContent(d) {
-    const histories = (d.histories ?? []).map(h =>
-        `<div class="border-l-2 border-gray-200 pl-3">
-            <p class="text-xs text-gray-500">${esc(h.note ?? '')}</p>
-            <p class="text-[10px] text-gray-400">${formatDate(h.created_at)}</p>
+    const sortedHistories = (d.histories ?? [])
+        .slice()
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const historiesHtml = sortedHistories.map(h => `
+        <div class="border-l-2 border-brand-200 pl-3 space-y-0.5">
+            <div class="flex items-center justify-between gap-2">
+                ${h.created_by ? `<span class="text-[10px] font-semibold text-brand-600">${esc(h.created_by)}</span>` : ''}
+                <span class="text-[10px] text-gray-400 ml-auto">${formatDate(h.created_at)}</span>
+            </div>
+            <p class="text-xs text-gray-600 leading-snug">${esc(h.note ?? '')}</p>
         </div>`).join('');
     return `
     <div class="space-y-1">
         <h2 class="text-lg font-bold text-gray-900 leading-snug">${esc(d.title ?? '')}</h2>
         ${_infoRow('user', d.customer)}
         ${_infoRow('clock', formatDate(d.start_date, d.start_time) + ' → ' + formatDate(d.end_date, d.end_time))}
+        ${d.department ? _infoRow('briefcase', d.department) : ''}
         ${d.description ? `<p class="text-sm text-gray-500 pt-1">${esc(d.description)}</p>` : ''}
     </div>
     ${_buildFormSection(d.status, d.notes ?? [])}
     ${_buildAttachmentsSection(d.attachments ?? [])}
-    ${histories ? `<div class="space-y-2">
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Storico</p>
-        <div class="space-y-2">${histories}</div>
+    ${historiesHtml ? `<div class="space-y-2">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Messaggi</p>
+        <div class="space-y-3">${historiesHtml}</div>
     </div>` : ''}`;
 }
 
