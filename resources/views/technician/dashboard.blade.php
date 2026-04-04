@@ -512,8 +512,15 @@ function renderCalendarCard(ev) {
     const isSegnalazione = ev.event_type === 'segnalazione';
     const isMine = isSegnalazione && ev.technician_id === CURRENT_USER_ID;
     const color = ev.color || (isSegnalazione ? '#f97316' : '#0284c7');
-    const histories = (ev.histories ?? []).map(h =>
-        `<li class="text-xs text-gray-500 border-l-2 border-gray-200 pl-2 py-0.5">${h.note} <span class="text-gray-400 text-[10px]">${formatDate(h.created_at)}</span></li>`
+    const sortedH = (ev.histories ?? []).slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const histories = sortedH.map(h =>
+        `<li class="border-l-2 border-brand-200 pl-2 py-0.5 space-y-0.5">
+            <div class="flex items-center justify-between gap-2">
+                ${h.created_by ? `<span class="text-[10px] font-semibold text-brand-600">${h.created_by}</span>` : ''}
+                <span class="text-[10px] text-gray-400 ml-auto">${formatDate(h.created_at)}</span>
+            </div>
+            <p class="text-xs text-gray-600 leading-snug">${h.note ?? ''}</p>
+        </li>`
     ).join('');
     const typeLabel = isSegnalazione
         ? `<span class="text-[10px] font-bold uppercase tracking-wide text-orange-400">Segnalazione</span>`
@@ -538,12 +545,13 @@ function renderCalendarCard(ev) {
                 <i data-feather="clock" class="w-3 h-3"></i>
                 <span>${formatDate(ev.start_date, ev.start_time)} → ${formatDate(ev.end_date, ev.end_time)}</span>
             </div>
-            ${ev.customer ? `<div class="flex items-center text-xs text-gray-500 space-x-1 mb-2"><i data-feather="user" class="w-3 h-3"></i><span>${ev.customer}</span></div>` : ''}
+            ${ev.customer ? `<div class="flex items-center text-xs text-gray-500 space-x-1 mb-1"><i data-feather="user" class="w-3 h-3"></i><span>${ev.customer}</span></div>` : ''}
+            ${ev.department ? `<div class="flex items-center text-xs text-gray-500 space-x-1 mb-1"><i data-feather="briefcase" class="w-3 h-3"></i><span>${ev.department}</span></div>` : ''}
             ${ev.description ? `<p class="text-xs text-gray-400 mb-2">${ev.description}</p>` : ''}
             ${histories ? `
             <details class="mt-1">
-                <summary class="text-xs text-brand-600 cursor-pointer font-medium">Note (${ev.histories.length})</summary>
-                <ul class="mt-2 space-y-1">${histories}</ul>
+                <summary class="text-xs text-brand-600 cursor-pointer font-medium">Messaggi (${sortedH.length})</summary>
+                <ul class="mt-2 space-y-2">${histories}</ul>
             </details>` : ''}
             <button onclick="openActivityDetail('calendar', ${ev.id})"
                 class="mt-3 w-full flex items-center justify-center space-x-1.5 text-xs text-brand-600 font-semibold py-2 border border-brand-200 rounded-xl active:bg-brand-50 transition-colors">
