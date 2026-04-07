@@ -21,19 +21,12 @@ Route::middleware('technician')->group(function () {
         // Liste
         Route::get('/calendar-events',             [TechnicianController::class, 'calendarEvents']);
         Route::get('/cart-activities',             [TechnicianController::class, 'cartActivities']);
-        Route::get('/tickets',                     [TechnicianController::class, 'tickets']);
         Route::get('/products',                    [TechnicianController::class, 'products']);
 
         // Dettaglio + azioni calendario
         Route::get('/calendar-events/{id}',        [TechnicianController::class, 'calendarEventDetail']);
         Route::patch('/calendar-events/{id}',      [TechnicianController::class, 'updateCalendarEvent']);
         Route::post('/calendar-events/{id}/attachments', [TechnicianController::class, 'uploadCalendarAttachment']);
-
-        // Dettaglio + azioni ticket
-        Route::get('/tickets/{id}',                [TechnicianController::class, 'ticketDetail']);
-        Route::put('/tickets/{id}',                [TechnicianController::class, 'updateTicket']);
-        Route::post('/tickets/{id}/notes',         [TechnicianController::class, 'addTicketNote']);
-        Route::post('/tickets/{id}/attachments',   [TechnicianController::class, 'uploadTicketAttachment']);
 
         // Dettaglio + azioni cart activities
         Route::get('/cart-activities/{id}',        [TechnicianController::class, 'cartActivityDetail']);

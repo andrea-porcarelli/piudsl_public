@@ -492,23 +492,23 @@ async function loadAgenda() {
     document.getElementById('today-btn').classList.toggle('hidden', date === today);
 
     try {
-        const [calRes, actRes, tickRes] = await Promise.all([
+        const [calRes, actRes] = await Promise.all([
             fetch('/api/technician/calendar-events', { headers: { 'X-CSRF-TOKEN': CSRF } }),
             fetch('/api/technician/cart-activities',  { headers: { 'X-CSRF-TOKEN': CSRF } }),
-            fetch('/api/technician/tickets',           { headers: { 'X-CSRF-TOKEN': CSRF } }),
         ]);
 
-        if ([calRes, actRes, tickRes].some(r => r.status === 401)) { showSessionExpired(); return; }
+        if ([calRes, actRes].some(r => r.status === 401)) { showSessionExpired(); return; }
 
-        const [calJson, actJson, tickJson] = await Promise.all([calRes.json(), actRes.json(), tickRes.json()]);
+        const [calJson, actJson] = await Promise.all([calRes.json(), actRes.json()]);
 
         // Filtra eventi e attività per la data selezionata, salva globalmente
         allCalendarEvents = (calJson.data ?? []).filter(ev =>
             ev.event_type === 'segnalazione' ||
+            ev.event_type === 'ticket' ||
             ((ev.start_date ?? '') <= date && (ev.end_date ?? ev.start_date ?? '') >= date)
         );
         allActivities = (actJson.data ?? []).filter(act => act.event_at === date);
-        allTickets    = tickJson.data ?? [];
+        allTickets    = allCalendarEvents.filter(ev => ev.event_type === 'ticket');
         calendarFilter = 'open';
 
         if (!allCalendarEvents.length && !allActivities.length && !allTickets.length) {
@@ -538,7 +538,7 @@ function renderAgendaList() {
     const combined = [
         ...filtered.map(ev   => ({ type: 'calendar', time: ev.start_time   || '00:00', data: ev })),
         ...allActivities.map(act => ({ type: 'activity', time: act.event_time || '00:00', data: act })),
-    ].sort((a, b) => a.time > b.time ? 1 : -1);
+    ].sort((a, b) => a.time > b.time ? -1 : 1);
 
     let html = renderCalendarFilterBar();
     html += combined.map(item =>
@@ -663,17 +663,17 @@ function renderTicketsBlock() {
             <h3 class="text-sm font-semibold text-gray-600">Ticket</h3>
         </div>
         <div class="flex space-x-2 overflow-x-auto pb-1">
-            <button onclick="filterAgendaTickets('all')"     id="filter-all"     class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'all'     ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Tutti</button>
-            <button onclick="filterAgendaTickets('open')"    id="filter-open"    class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'open'    ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Aperti</button>
-            <button onclick="filterAgendaTickets('pending')" id="filter-pending" class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'pending' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">In attesa</button>
-            <button onclick="filterAgendaTickets('close')"   id="filter-close"   class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'close'   ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Chiusi</button>
+            <button onclick="filterAgendaTickets('all')"         id="filter-all"         class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'all'         ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Tutti</button>
+            <button onclick="filterAgendaTickets('open')"        id="filter-open"        class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'open'        ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Aperti</button>
+            <button onclick="filterAgendaTickets('in_progress')" id="filter-in_progress" class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'in_progress' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">In corso</button>
+            <button onclick="filterAgendaTickets('close')"       id="filter-close"       class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'close'       ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Chiusi</button>
         </div>
         <div id="agenda-tickets-cards" class="space-y-3 mt-2">${renderTicketCards()}</div>
     </div>`;
 }
 
 function renderTicketCards() {
-    const filtered = activeFilter === 'all' ? allTickets : allTickets.filter(t => t.ticket_status === activeFilter);
+    const filtered = activeFilter === 'all' ? allTickets : allTickets.filter(t => t.status === activeFilter);
     if (!filtered.length) {
         return `<div class="text-center py-6">
             <i data-feather="inbox" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
@@ -681,11 +681,11 @@ function renderTicketCards() {
         </div>`;
     }
     return filtered.map(t => `
-        <div class="bg-white rounded-2xl shadow-sm border border-purple-50 p-4" id="ticket-${t.id}">
+        <div class="bg-white rounded-2xl shadow-sm border border-purple-50 p-4" id="calticket-${t.id}">
             <div class="flex items-start justify-between gap-2 mb-2">
                 <div class="flex flex-wrap gap-1.5">
-                    ${levelBadge(t.ticket_level)}
-                    ${statusBadge(t.ticket_status)}
+                    ${levelBadge(t.level)}
+                    ${statusBadge(t.status)}
                 </div>
                 <span class="text-[10px] text-gray-400 flex-shrink-0">#${t.id}</span>
             </div>
@@ -697,15 +697,17 @@ function renderTicketCards() {
             <div class="text-[10px] text-gray-400 mb-3">${formatDate(t.updated_at)}</div>
             <div class="flex items-center space-x-2">
                 <select id="status-select-${t.id}" class="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-brand-400 bg-gray-50">
-                    <option value="open"    ${t.ticket_status === 'open'    ? 'selected' : ''}>Aperto</option>
-                    <option value="pending" ${t.ticket_status === 'pending' ? 'selected' : ''}>In attesa</option>
-                    <option value="close"   ${t.ticket_status === 'close'   ? 'selected' : ''}>Chiuso</option>
+                    <option value="open"        ${t.status === 'open'        ? 'selected' : ''}>Aperto</option>
+                    <option value="in_progress" ${t.status === 'in_progress' ? 'selected' : ''}>In corso</option>
+                    <option value="suspended"   ${t.status === 'suspended'   ? 'selected' : ''}>Sospeso</option>
+                    <option value="completed"   ${t.status === 'completed'   ? 'selected' : ''}>Completato</option>
+                    <option value="close"       ${t.status === 'close'       ? 'selected' : ''}>Chiuso</option>
                 </select>
                 <button onclick="updateTicketStatus(${t.id})" class="text-xs bg-brand-600 hover:bg-brand-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50" id="status-btn-${t.id}">
                     Salva
                 </button>
             </div>
-            <button onclick="openActivityDetail('ticket', ${t.id})"
+            <button onclick="openActivityDetail('calendar', ${t.id})"
                 class="mt-2 w-full flex items-center justify-center space-x-1.5 text-xs text-purple-600 font-semibold py-2 border border-purple-200 rounded-xl active:bg-purple-50 transition-colors">
                 <i data-feather="edit-2" class="w-3.5 h-3.5"></i>
                 <span>Gestisci</span>
@@ -748,19 +750,18 @@ async function openCalOverview() {
     feather.replace();
 
     try {
-        const [calRes, actRes, tickRes] = await Promise.all([
+        const [calRes, actRes] = await Promise.all([
             fetch('/api/technician/calendar-events', { headers: { 'X-CSRF-TOKEN': CSRF } }),
             fetch('/api/technician/cart-activities',  { headers: { 'X-CSRF-TOKEN': CSRF } }),
-            fetch('/api/technician/tickets',           { headers: { 'X-CSRF-TOKEN': CSRF } }),
         ]);
-        if ([calRes, actRes, tickRes].some(r => r.status === 401)) { showSessionExpired(); closeCalOverview(); return; }
+        if ([calRes, actRes].some(r => r.status === 401)) { showSessionExpired(); closeCalOverview(); return; }
 
-        const [calJson, actJson, tickJson] = await Promise.all([calRes.json(), actRes.json(), tickRes.json()]);
+        const [calJson, actJson] = await Promise.all([calRes.json(), actRes.json()]);
 
         _calOvData = {
-            events:     (calJson.data  ?? []).filter(ev  => ev.status === 'open'),
-            activities: (actJson.data  ?? []).filter(act => act.status === 'open'),
-            tickets:    (tickJson.data ?? []).filter(t   => t.ticket_status === 'open'),
+            events:     (calJson.data ?? []).filter(ev  => ev.status === 'open' && ev.event_type !== 'ticket'),
+            activities: (actJson.data ?? []).filter(act => act.status === 'open'),
+            tickets:    (calJson.data ?? []).filter(ev  => ev.event_type === 'ticket' && ev.status === 'open'),
         };
 
         document.getElementById('cal-ov-loading').classList.add('hidden');
@@ -818,7 +819,7 @@ function _renderCalOvGrid() {
         );
         const hasAct = _calOvData.activities.some(act => act.event_at === dateStr);
         const hasTick = _calOvData.tickets.some(t =>
-            (t.updated_at ?? '').slice(0, 10) === dateStr
+            (t.start_date ?? '') <= dateStr && (t.end_date ?? t.start_date ?? '') >= dateStr
         );
 
         const isToday    = dateStr === today;
@@ -864,7 +865,9 @@ function _renderCalOvDetail() {
         (ev.start_date ?? '') <= d && (ev.end_date ?? ev.start_date ?? '') >= d
     );
     const acts = _calOvData.activities.filter(act => act.event_at === d);
-    const ticks = _calOvData.tickets.filter(t => (t.updated_at ?? '').slice(0, 10) === d);
+    const ticks = _calOvData.tickets.filter(t =>
+        (t.start_date ?? '') <= d && (t.end_date ?? t.start_date ?? '') >= d
+    );
 
     if (!evs.length && !acts.length && !ticks.length) {
         el.innerHTML = `<p class="text-center text-sm text-gray-400 py-4">Nessun elemento aperto in questa data.</p>`;
@@ -1250,17 +1253,18 @@ async function updateTicketStatus(id) {
     btn.textContent = '...';
 
     try {
-        const res = await fetch('/api/technician/tickets/' + id, {
-            method: 'PUT',
+        const res = await fetch('/api/technician/calendar-events/' + id, {
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-            body: JSON.stringify({ ticket_status: newStatus }),
+            body: JSON.stringify({ status: newStatus }),
         });
 
         if (res.status === 401) { showSessionExpired(); return; }
 
         if (res.ok) {
-            const ticket = allTickets.find(t => t.id === id);
-            if (ticket) ticket.ticket_status = newStatus;
+            const ev = allCalendarEvents.find(e => e.id === id);
+            if (ev) ev.status = newStatus;
+            allTickets = allCalendarEvents.filter(e => e.event_type === 'ticket');
 
             btn.textContent = '✓';
             btn.className = btn.className.replace('bg-brand-600 hover:bg-brand-700', 'bg-green-500');
@@ -1296,11 +1300,6 @@ const SHEET_STATUS_OPTIONS = {
         { value: 'suspended',   label: 'Sospeso' },
         { value: 'completed',   label: 'Completato' },
         { value: 'close',       label: 'Chiuso' },
-    ],
-    ticket: [
-        { value: 'open',    label: 'Aperto' },
-        { value: 'pending', label: 'In attesa' },
-        { value: 'close',   label: 'Chiuso' },
     ],
     activity: [
         { value: 'open',      label: 'Aperto' },
@@ -1368,7 +1367,6 @@ function closeActivitySheet() {
 function _sheetTypeBadgeHtml(type) {
     const cfg = {
         calendar: { label: 'Evento Calendario', cls: 'text-brand-700 bg-brand-50',   icon: 'calendar' },
-        ticket:   { label: 'Ticket',            cls: 'text-purple-700 bg-purple-50', icon: 'message-square' },
         activity: { label: 'Installazione',      cls: 'text-amber-700 bg-amber-50',   icon: 'tool' },
     }[type] ?? { label: type, cls: 'text-gray-700 bg-gray-100', icon: 'info' };
     return `<span class="flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${cfg.cls}">
@@ -1381,7 +1379,6 @@ function _renderSheetContent() {
     const el = document.getElementById('sheet-content');
     el.classList.remove('hidden');
     if (_sheetType === 'calendar') el.innerHTML = _buildCalendarContent(_sheetData);
-    if (_sheetType === 'ticket')   el.innerHTML = _buildTicketContent(_sheetData);
     if (_sheetType === 'activity') el.innerHTML = _buildActivityContent(_sheetData);
     feather.replace();
 }
@@ -1526,19 +1523,6 @@ function _buildCalendarContent(d) {
     </div>` : ''}`;
 }
 
-// ── Ticket ────────────────────────────────────────────────────────────────────
-function _buildTicketContent(d) {
-    return `
-    <div class="space-y-1">
-        <div class="flex items-center space-x-2 mb-1">${levelBadge(d.ticket_level)}<span class="text-[10px] text-gray-400">#${d.id}</span></div>
-        <h2 class="text-base font-bold text-gray-900">${esc(d.customer ?? '')}</h2>
-        ${_infoRow('clock', formatDate(d.updated_at))}
-        ${d.messages_count ? `<p class="text-xs text-gray-400">${d.messages_count} messaggi</p>` : ''}
-    </div>
-    ${_buildFormSection(d.ticket_status, d.notes ?? [])}
-    ${_buildAttachmentsSection(d.attachments ?? [])}`;
-}
-
 // ── Cart Activity ─────────────────────────────────────────────────────────────
 function _buildActivityContent(d) {
     const offer = d.offer;
@@ -1653,6 +1637,14 @@ async function saveSheetChanges() {
             if (res.ok) {
                 const json = await res.json();
                 _sheetData = json.data ?? _sheetData;
+                if (_sheetType === 'calendar') {
+                    // Aggiorna in-memory e ri-sincronizza allTickets se necessario
+                    const ev = allCalendarEvents.find(e => e.id === _sheetId);
+                    if (ev) { ev.status = _sheetData.status ?? status; }
+                    allTickets = allCalendarEvents.filter(e => e.event_type === 'ticket');
+                    const c = document.getElementById('agenda-tickets-cards');
+                    if (c) { c.innerHTML = renderTicketCards(); feather.replace(); }
+                }
                 if (_sheetType === 'activity') {
                     fb.classList.remove('hidden');
                     await new Promise(r => setTimeout(r, 1200));
@@ -1660,34 +1652,6 @@ async function saveSheetChanges() {
                     loadAgenda();
                     return;
                 }
-            }
-        } else if (_sheetType === 'ticket') {
-            const statusRes = await fetch(`/api/technician/tickets/${_sheetId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-                body: JSON.stringify({ ticket_status: status }),
-            });
-            if (statusRes.status === 401) { showSessionExpired(); return; }
-
-            if (note) {
-                const noteRes = await fetch(`/api/technician/tickets/${_sheetId}/notes`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-                    body: JSON.stringify({ body: note }),
-                });
-                if (noteRes.status === 401) { showSessionExpired(); return; }
-                if (noteRes.ok) {
-                    const json = await noteRes.json();
-                    if (!_sheetData.notes) _sheetData.notes = [];
-                    _sheetData.notes.push(json.data ?? { body: note, created_at: new Date().toISOString() });
-                }
-            }
-            if (statusRes.ok) {
-                if (_sheetData) _sheetData.ticket_status = status;
-                const t = allTickets.find(t => t.id === _sheetId);
-                if (t) t.ticket_status = status;
-                const c = document.getElementById('agenda-tickets-cards');
-                if (c) { c.innerHTML = renderTicketCards(); feather.replace(); }
             }
         }
 
@@ -1706,7 +1670,6 @@ async function uploadSheetImages(input) {
 
     const urls = {
         calendar: `/api/technician/calendar-events/${_sheetId}/attachments`,
-        ticket:   `/api/technician/tickets/${_sheetId}/attachments`,
         activity: `/api/technician/cart-activities/${_sheetId}/attachments`,
     };
 

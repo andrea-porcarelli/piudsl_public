@@ -57,19 +57,6 @@ class TechnicianController extends Controller
         return response()->json($response->json(), $response->status());
     }
 
-    public function tickets(Request $request): JsonResponse
-    {
-        $response = Http::timeout(10)
-            ->withHeaders($this->apiHeaders($request))
-            ->get($this->baseUrl() . '/tickets');
-
-        if ($response->status() === 401) {
-            return response()->json(['success' => false, 'message' => 'Sessione scaduta.'], 401);
-        }
-
-        return response()->json($response->json(), $response->status());
-    }
-
     public function paperInvoices(Request $request): JsonResponse
     {
         $month           = (int) $request->query('month', (int) now()->format('n'));
@@ -248,27 +235,6 @@ class TechnicianController extends Controller
         return $this->proxyUpload($request, "/calendar-events/{$id}/attachments");
     }
 
-    // ── Tickets ────────────────────────────────────────────────────────────────
-
-    public function ticketDetail(Request $request, int $id): JsonResponse
-    {
-        return $this->proxy($request, 'get', "/tickets/{$id}");
-    }
-
-    public function addTicketNote(Request $request, int $id): JsonResponse
-    {
-        $data = $request->validate(['body' => ['required', 'string', 'max:2000']]);
-
-        return $this->proxy($request, 'post', "/tickets/{$id}/notes", $data);
-    }
-
-    public function uploadTicketAttachment(Request $request, int $id): JsonResponse
-    {
-        $request->validate(['images' => ['required'], 'images.*' => ['file', 'image', 'max:10240']]);
-
-        return $this->proxyUpload($request, "/tickets/{$id}/attachments");
-    }
-
     // ── Cart Activities ────────────────────────────────────────────────────────
 
     public function cartActivityDetail(Request $request, int $id): JsonResponse
@@ -336,24 +302,4 @@ class TechnicianController extends Controller
         return response()->json($response->json(), $response->status());
     }
 
-    // ── Tickets (update) ───────────────────────────────────────────────────────
-
-    public function updateTicket(Request $request, int $id): JsonResponse
-    {
-        $data = $request->validate([
-            'ticket_status' => ['sometimes', 'in:open,pending,close'],
-            'ticket_level'  => ['sometimes', 'in:normal,low,high'],
-            'department'    => ['sometimes', 'in:admins,technicians'],
-        ]);
-
-        $response = Http::timeout(10)
-            ->withHeaders($this->apiHeaders($request))
-            ->put($this->baseUrl() . "/tickets/{$id}", $data);
-
-        if ($response->status() === 401) {
-            return response()->json(['success' => false, 'message' => 'Sessione scaduta.'], 401);
-        }
-
-        return response()->json($response->json(), $response->status());
-    }
 }
