@@ -13,8 +13,7 @@ Route::get('/', [HomeController::class, 'index']);
 Route::get('/api/notice', [NoticeController::class, 'show']);
 
 // Form contatti homepage — invio mail interno (non passa dall'API esterna)
-Route::post('/api/contact', [ContactController::class, 'submit'])
-    ->middleware('throttle:5,1');
+Route::post('/api/contact', [ContactController::class, 'submit']);
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);

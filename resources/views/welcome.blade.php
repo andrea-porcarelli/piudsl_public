@@ -869,27 +869,31 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="contact-nome" class="block text-sm font-medium text-gray-300 mb-2">Nome</label>
-                            <input id="contact-nome" name="nome" type="text" autocomplete="given-name" maxlength="120" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="Il tuo nome" required>
+                            <input id="contact-nome" name="nome" type="text" autocomplete="given-name" maxlength="120" data-contact-field class="contact-input w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="Il tuo nome" required>
+                            <p id="contact-nome-error" class="contact-error hidden mt-1 text-xs text-red-300"></p>
                         </div>
                         <div>
                             <label for="contact-cognome" class="block text-sm font-medium text-gray-300 mb-2">Cognome</label>
-                            <input id="contact-cognome" name="cognome" type="text" autocomplete="family-name" maxlength="120" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="Il tuo cognome" required>
+                            <input id="contact-cognome" name="cognome" type="text" autocomplete="family-name" maxlength="120" data-contact-field class="contact-input w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="Il tuo cognome" required>
+                            <p id="contact-cognome-error" class="contact-error hidden mt-1 text-xs text-red-300"></p>
                         </div>
                     </div>
 
                     <div>
                         <label for="contact-email" class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                        <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="190" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="la-tua-email@esempio.com" required>
+                        <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="190" data-contact-field class="contact-input w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="la-tua-email@esempio.com" required>
+                        <p id="contact-email-error" class="contact-error hidden mt-1 text-xs text-red-300"></p>
                     </div>
 
                     <div>
-                        <label for="contact-telefono" class="block text-sm font-medium text-gray-300 mb-2">Telefono</label>
-                        <input id="contact-telefono" name="telefono" type="tel" autocomplete="tel" maxlength="40" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="+39 123 456 7890">
+                        <label for="contact-telefono" class="block text-sm font-medium text-gray-300 mb-2">Telefono <span class="text-gray-500 font-normal">(opzionale)</span></label>
+                        <input id="contact-telefono" name="telefono" type="tel" autocomplete="tel" maxlength="40" data-contact-field class="contact-input w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="+39 123 456 7890">
+                        <p id="contact-telefono-error" class="contact-error hidden mt-1 text-xs text-red-300"></p>
                     </div>
 
                     <div>
                         <label for="contact-tipo" class="block text-sm font-medium text-gray-300 mb-2">Tipo di Richiesta</label>
-                        <select id="contact-tipo" name="tipo" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" required>
+                        <select id="contact-tipo" name="tipo" data-contact-field class="contact-input w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" required>
                             <option value="">Seleziona...</option>
                             <option value="info">Informazioni generali</option>
                             <option value="pricing">Tariffe e prezzi</option>
@@ -897,11 +901,13 @@
                             <option value="support">Supporto tecnico</option>
                             <option value="other">Altro</option>
                         </select>
+                        <p id="contact-tipo-error" class="contact-error hidden mt-1 text-xs text-red-300"></p>
                     </div>
 
                     <div>
                         <label for="contact-messaggio" class="block text-sm font-medium text-gray-300 mb-2">Messaggio</label>
-                        <textarea id="contact-messaggio" name="messaggio" rows="4" maxlength="5000" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200 resize-none" placeholder="Descrivi la tua richiesta..." required></textarea>
+                        <textarea id="contact-messaggio" name="messaggio" rows="4" minlength="10" maxlength="5000" data-contact-field class="contact-input w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200 resize-none" placeholder="Descrivi la tua richiesta (minimo 10 caratteri)..." required></textarea>
+                        <p id="contact-messaggio-error" class="contact-error hidden mt-1 text-xs text-red-300"></p>
                     </div>
 
                     {{-- Honeypot: lasciato nascosto, riempito solo dai bot --}}
@@ -1188,28 +1194,80 @@
                 : 'text-gray-500 hover:text-gray-700');
     }
 
-    // Contact form handler — invia davvero la mail al backoffice
+    // ── Form contatti homepage ─────────────────────────────────────────────
+    const CONTACT_FIELDS = ['nome', 'cognome', 'email', 'telefono', 'tipo', 'messaggio'];
+
+    function contactSetFieldError(field, message) {
+        const input = document.getElementById('contact-' + field);
+        const err   = document.getElementById('contact-' + field + '-error');
+        if (!input || !err) return;
+        if (message) {
+            err.textContent = message;
+            err.classList.remove('hidden');
+            input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
+            input.classList.remove('border-gray-600');
+            input.setAttribute('aria-invalid', 'true');
+        } else {
+            err.textContent = '';
+            err.classList.add('hidden');
+            input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+            input.classList.add('border-gray-600');
+            input.removeAttribute('aria-invalid');
+        }
+    }
+
+    function contactClearAllErrors() {
+        CONTACT_FIELDS.forEach(f => contactSetFieldError(f, null));
+        const feedback = document.getElementById('contact-feedback');
+        feedback.className = 'hidden text-sm rounded-lg px-4 py-3';
+        feedback.textContent = '';
+    }
+
+    function contactShowFeedback(msg, kind) {
+        const feedback = document.getElementById('contact-feedback');
+        feedback.textContent = msg;
+        feedback.className = 'text-sm rounded-lg px-4 py-3 ' + (
+            kind === 'success'
+                ? 'bg-green-500/10 border border-green-500/40 text-green-200'
+                : 'bg-red-500/10 border border-red-500/40 text-red-200'
+        );
+    }
+
+    // Validazione client-side rapida (riflette le regole del controller)
+    function contactValidateClient(payload) {
+        const errors = {};
+        if (!payload.nome)                         errors.nome      = 'Il nome è obbligatorio.';
+        else if (payload.nome.length > 120)        errors.nome      = 'Il nome non può superare i 120 caratteri.';
+        if (!payload.cognome)                      errors.cognome   = 'Il cognome è obbligatorio.';
+        else if (payload.cognome.length > 120)     errors.cognome   = 'Il cognome non può superare i 120 caratteri.';
+        if (!payload.email)                        errors.email     = 'L\'email è obbligatoria.';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email))
+                                                   errors.email     = 'Inserisci un indirizzo email valido.';
+        if (payload.telefono && !/^[\d\s+().\/-]{5,40}$/.test(payload.telefono))
+                                                   errors.telefono  = 'Il numero di telefono non è valido.';
+        if (!payload.tipo)                         errors.tipo      = 'Seleziona un tipo di richiesta.';
+        if (!payload.messaggio)                    errors.messaggio = 'Il messaggio è obbligatorio.';
+        else if (payload.messaggio.length < 10)    errors.messaggio = 'Il messaggio deve contenere almeno 10 caratteri.';
+        else if (payload.messaggio.length > 5000)  errors.messaggio = 'Il messaggio non può superare i 5000 caratteri.';
+        return errors;
+    }
+
+    // Quando l'utente ridigita su un campo segnalato, ripulisce l'errore
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('#contact-form [data-contact-field]').forEach(el => {
+            el.addEventListener('input',  () => contactSetFieldError(el.name, null));
+            el.addEventListener('change', () => contactSetFieldError(el.name, null));
+        });
+    });
+
     async function handleContactForm(event) {
         event.preventDefault();
         const form        = event.target;
         const button      = form.querySelector('button[type="submit"]');
-        const feedback    = document.getElementById('contact-feedback');
         const originalTxt = button.textContent;
 
-        const showFeedback = (msg, kind) => {
-            feedback.textContent = msg;
-            feedback.className = 'text-sm rounded-lg px-4 py-3 ' + (
-                kind === 'success'
-                    ? 'bg-green-500/10 border border-green-500/40 text-green-300'
-                    : 'bg-red-500/10 border border-red-500/40 text-red-300'
-            );
-        };
+        contactClearAllErrors();
 
-        feedback.className = 'hidden text-sm rounded-lg px-4 py-3';
-        button.textContent = 'Invio in corso...';
-        button.disabled = true;
-
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const payload = {
             nome:      form.nome.value.trim(),
             cognome:   form.cognome.value.trim(),
@@ -1219,6 +1277,22 @@
             messaggio: form.messaggio.value.trim(),
             website:   form.website.value, // honeypot
         };
+
+        // 1) Validazione lato client
+        const localErrors = contactValidateClient(payload);
+        if (Object.keys(localErrors).length > 0) {
+            Object.entries(localErrors).forEach(([field, msg]) => contactSetFieldError(field, msg));
+            contactShowFeedback('Controlla i campi evidenziati e riprova.', 'error');
+            const firstWrong = document.getElementById('contact-' + Object.keys(localErrors)[0]);
+            firstWrong?.focus();
+            return;
+        }
+
+        // 2) Invio al backend
+        button.textContent = 'Invio in corso...';
+        button.disabled = true;
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
         try {
             const res = await fetch('/api/contact', {
@@ -1233,20 +1307,25 @@
             });
 
             if (res.ok) {
-                showFeedback('Grazie! La tua richiesta è stata inviata, ti ricontatteremo a breve.', 'success');
+                contactShowFeedback('Grazie! La tua richiesta è stata inviata, ti ricontatteremo a breve.', 'success');
                 form.reset();
             } else if (res.status === 422) {
                 const data = await res.json().catch(() => ({}));
-                const firstErr = data.errors ? Object.values(data.errors)[0]?.[0] : null;
-                showFeedback(firstErr || 'Controlla i campi del modulo e riprova.', 'error');
+                const errs = data.errors || {};
+                Object.entries(errs).forEach(([field, msgs]) => contactSetFieldError(field, msgs[0]));
+                contactShowFeedback(data.message || 'Controlla i campi evidenziati e riprova.', 'error');
+                const firstField = Object.keys(errs)[0];
+                if (firstField) document.getElementById('contact-' + firstField)?.focus();
+            } else if (res.status === 419) {
+                contactShowFeedback('Sessione scaduta: ricarica la pagina e riprova.', 'error');
             } else if (res.status === 429) {
-                showFeedback('Troppe richieste ravvicinate, attendi un minuto e riprova.', 'error');
+                contactShowFeedback('Troppe richieste ravvicinate, attendi un minuto e riprova.', 'error');
             } else {
                 const data = await res.json().catch(() => ({}));
-                showFeedback(data.message || 'Errore durante l\'invio. Riprova tra qualche istante.', 'error');
+                contactShowFeedback(data.message || 'Errore durante l\'invio. Riprova tra qualche istante.', 'error');
             }
         } catch (_) {
-            showFeedback('Errore di rete: verifica la connessione e riprova.', 'error');
+            contactShowFeedback('Errore di rete: verifica la connessione e riprova.', 'error');
         } finally {
             button.textContent = originalTxt;
             button.disabled = false;

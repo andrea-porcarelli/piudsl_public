@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 
 class ContactController extends Controller
 {
@@ -19,22 +20,24 @@ class ContactController extends Controller
 
     public function submit(Request $request): JsonResponse
     {
-        $data = $request->validate([
-            'nome'         => 'required|string|max:120',
-            'cognome'      => 'required|string|max:120',
-            'email'        => 'required|email:rfc|max:190',
-            'telefono'     => 'nullable|string|max:40',
-            'tipo'         => 'required|string|in:' . implode(',', array_keys(self::REQUEST_TYPES)),
-            'messaggio'    => 'required|string|max:5000',
-            'website'      => 'nullable|string|max:0', // honeypot
-        ]);
-
-        // Honeypot: se compilato è un bot — rispondiamo OK ma non spediamo
-        if (! empty($request->input('website'))) {
+        // Honeypot anti-bot: se compilato, fingiamo OK e non spediamo nulla.
+        if (filled($request->input('website'))) {
+            Log::info('ContactController@submit: honeypot triggered', ['ip' => $request->ip()]);
             return response()->json(['ok' => true]);
         }
 
-        $tipoLabel = self::REQUEST_TYPES[$data['tipo']] ?? $data['tipo'];
+        $data = $request->validate([
+            'nome'      => ['required', 'string', 'max:120'],
+            'cognome'   => ['required', 'string', 'max:120'],
+            'email'     => ['required', 'string', 'email', 'max:190'],
+            'telefono'  => ['nullable', 'string', 'max:40', 'regex:/^[\d\s+().\/-]{5,40}$/'],
+            'tipo'      => ['required', Rule::in(array_keys(self::REQUEST_TYPES))],
+            'messaggio' => ['required', 'string', 'min:10', 'max:5000'],
+        ], $this->messages(), $this->attributes());
+
+        $tipoLabel = self::REQUEST_TYPES[$data['tipo']];
+        $fullName  = trim($data['nome'] . ' ' . $data['cognome']);
+        $recipient = config('services.contact_form.recipient');
 
         $body = "Nuova richiesta dal form di contatto del sito.\n\n"
             . "Nome:        {$data['nome']}\n"
@@ -46,9 +49,6 @@ class ContactController extends Controller
             . "----------\n"
             . $data['messaggio'] . "\n";
 
-        $recipient = config('services.contact_form.recipient');
-        $fullName  = trim($data['nome'] . ' ' . $data['cognome']);
-
         try {
             Mail::raw($body, function ($message) use ($recipient, $data, $fullName, $tipoLabel) {
                 $message->to($recipient)
@@ -56,7 +56,7 @@ class ContactController extends Controller
                     ->subject("Richiesta sito ({$tipoLabel}) — {$fullName}");
             });
         } catch (\Throwable $e) {
-            Log::error('Invio mail form contatti fallito', [
+            Log::error('ContactController@submit: invio mail fallito', [
                 'error' => $e->getMessage(),
                 'email' => $data['email'],
             ]);
@@ -66,6 +66,39 @@ class ContactController extends Controller
             ], 500);
         }
 
+        Log::info('ContactController@submit: richiesta inoltrata', [
+            'recipient' => $recipient,
+            'email'     => $data['email'],
+            'tipo'      => $data['tipo'],
+        ]);
+
         return response()->json(['ok' => true]);
+    }
+
+    /** Messaggi di validazione in italiano. */
+    private function messages(): array
+    {
+        return [
+            'required'        => 'Il campo :attribute è obbligatorio.',
+            'string'          => 'Il campo :attribute non è valido.',
+            'max.string'      => 'Il campo :attribute non può superare i :max caratteri.',
+            'min.string'      => 'Il campo :attribute deve contenere almeno :min caratteri.',
+            'email.email'     => 'Inserisci un indirizzo email valido.',
+            'telefono.regex'  => 'Il numero di telefono non è valido (usa cifre, spazi e i simboli + - ( ) / ).',
+            'tipo.in'         => 'Seleziona un tipo di richiesta valido.',
+        ];
+    }
+
+    /** Nomi leggibili dei campi per i messaggi di errore. */
+    private function attributes(): array
+    {
+        return [
+            'nome'      => 'nome',
+            'cognome'   => 'cognome',
+            'email'     => 'email',
+            'telefono'  => 'telefono',
+            'tipo'      => 'tipo di richiesta',
+            'messaggio' => 'messaggio',
+        ];
     }
 }
