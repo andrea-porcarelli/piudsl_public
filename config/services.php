@@ -44,4 +44,14 @@ return [
         'maps_api_key' => env('GOOGLE_MAPS_API_KEY', ''),
     ],
 
+    'onesignal' => [
+        'app_id'        => env('ONESIGNAL_APP_ID'),
+        'safari_web_id' => env('ONESIGNAL_SAFARI_WEB_ID'),
+        'rest_api_key'  => env('ONESIGNAL_REST_API_KEY'),
+    ],
+
+    'contact_form' => [
+        'recipient' => env('CONTACT_FORM_RECIPIENT', 'amministrazione@piudsl.it'),
+    ],
+
 ];

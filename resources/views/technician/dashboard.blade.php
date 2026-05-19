@@ -8,6 +8,13 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="PiùDSL Tecnico">
+    <meta name="theme-color" content="#0284c7">
+
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
     <title>PiùDSL — Area Tecnico</title>
 
     <!-- Tailwind CSS -->
@@ -62,6 +69,28 @@
         .tab-active { color: #0284c7; border-top: 2px solid #0284c7; }
         .tab-inactive { color: #94a3b8; border-top: 2px solid transparent; }
     </style>
+
+    @if(config('services.onesignal.app_id'))
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function (OneSignal) {
+            await OneSignal.init({
+                appId: @json(config('services.onesignal.app_id')),
+                safari_web_id: @json(config('services.onesignal.safari_web_id')),
+                serviceWorkerPath: '/technician/OneSignalSDKWorker.js',
+                serviceWorkerParam: { scope: '/technician/' },
+                notifyButton: { enable: false },
+                allowLocalhostAsSecureOrigin: @json(app()->environment('local')),
+            });
+            try {
+                await OneSignal.login(@json((string) $userId));
+            } catch (e) {
+                console.warn('OneSignal.login failed', e);
+            }
+        });
+    </script>
+    @endif
 </head>
 <body class="font-display antialiased bg-gray-50 text-gray-900">
 
@@ -456,6 +485,11 @@ function statusBadge(status) {
 
 // ── Logout ────────────────────────────────────────────────────────────────────
 async function handleLogout() {
+    // Stacca il device del tecnico dal proprio external_id su OneSignal,
+    // così il prossimo utente loggato sullo stesso device non eredita le sue push.
+    if (window.OneSignal && typeof OneSignal.logout === 'function') {
+        try { await OneSignal.logout(); } catch (e) { console.warn('OneSignal.logout failed', e); }
+    }
     await fetch('/auth/logout', { method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF } });
     window.location.href = '/';
 }

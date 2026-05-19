@@ -1,12 +1,15 @@
 {
-    auto_https off
+    email admin@piudsl.it
 }
 
-:443 {
-    tls /certs/cert.pem /certs/key.pem
+# In produzione: CADDY_DOMAIN=www.piudsl.it (impostato in .env, letto dal docker-compose).
+# Caddy gestisce ACME automatico (Let's Encrypt HTTP-01 sulla 80) e redirect HTTP -> HTTPS.
+# Prerequisiti: DNS A/AAAA puntato a questo host + porte 80 e 443 aperte verso internet.
+{$CADDY_DOMAIN} {
+    encode zstd gzip
+
     reverse_proxy piudsl_app_panel:8000
-}
 
-:80 {
-    redir https://172.100.1.14{uri} permanent
+    # Il PWA manifest richiede MIME application/manifest+json
+    header /manifest.webmanifest Content-Type "application/manifest+json"
 }

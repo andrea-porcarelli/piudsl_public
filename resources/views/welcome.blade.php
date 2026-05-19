@@ -865,31 +865,31 @@
             <div class="bg-gray-800 rounded-3xl p-8">
                 <h3 class="text-2xl font-bold mb-6">Richiedi Informazioni</h3>
 
-                <form class="space-y-6" onsubmit="handleContactForm(event)">
+                <form id="contact-form" class="space-y-6" onsubmit="handleContactForm(event)" novalidate>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Nome</label>
-                            <input type="text" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="Il tuo nome" required>
+                            <label for="contact-nome" class="block text-sm font-medium text-gray-300 mb-2">Nome</label>
+                            <input id="contact-nome" name="nome" type="text" autocomplete="given-name" maxlength="120" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="Il tuo nome" required>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Cognome</label>
-                            <input type="text" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="Il tuo cognome" required>
+                            <label for="contact-cognome" class="block text-sm font-medium text-gray-300 mb-2">Cognome</label>
+                            <input id="contact-cognome" name="cognome" type="text" autocomplete="family-name" maxlength="120" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="Il tuo cognome" required>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                        <input type="email" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="la-tua-email@esempio.com" required>
+                        <label for="contact-email" class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                        <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="190" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="la-tua-email@esempio.com" required>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Telefono</label>
-                        <input type="tel" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="+39 123 456 7890">
+                        <label for="contact-telefono" class="block text-sm font-medium text-gray-300 mb-2">Telefono</label>
+                        <input id="contact-telefono" name="telefono" type="tel" autocomplete="tel" maxlength="40" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" placeholder="+39 123 456 7890">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Tipo di Richiesta</label>
-                        <select class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" required>
+                        <label for="contact-tipo" class="block text-sm font-medium text-gray-300 mb-2">Tipo di Richiesta</label>
+                        <select id="contact-tipo" name="tipo" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200" required>
                             <option value="">Seleziona...</option>
                             <option value="info">Informazioni generali</option>
                             <option value="pricing">Tariffe e prezzi</option>
@@ -900,11 +900,18 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Messaggio</label>
-                        <textarea rows="4" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200 resize-none" placeholder="Descrivi la tua richiesta..." required></textarea>
+                        <label for="contact-messaggio" class="block text-sm font-medium text-gray-300 mb-2">Messaggio</label>
+                        <textarea id="contact-messaggio" name="messaggio" rows="4" maxlength="5000" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors duration-200 resize-none" placeholder="Descrivi la tua richiesta..." required></textarea>
                     </div>
 
-                    <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-brand-500/20">
+                    {{-- Honeypot: lasciato nascosto, riempito solo dai bot --}}
+                    <div class="hidden" aria-hidden="true">
+                        <label>Sito web<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+                    </div>
+
+                    <div id="contact-feedback" class="hidden text-sm rounded-lg px-4 py-3"></div>
+
+                    <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-brand-500/20 disabled:opacity-60 disabled:cursor-not-allowed">
                         Invia Richiesta
                     </button>
                 </form>
@@ -1181,22 +1188,69 @@
                 : 'text-gray-500 hover:text-gray-700');
     }
 
-    // Contact form handler
-    function handleContactForm(event) {
+    // Contact form handler — invia davvero la mail al backoffice
+    async function handleContactForm(event) {
         event.preventDefault();
-        const button = event.target.querySelector('button[type="submit"]');
-        const originalText = button.textContent;
+        const form        = event.target;
+        const button      = form.querySelector('button[type="submit"]');
+        const feedback    = document.getElementById('contact-feedback');
+        const originalTxt = button.textContent;
 
+        const showFeedback = (msg, kind) => {
+            feedback.textContent = msg;
+            feedback.className = 'text-sm rounded-lg px-4 py-3 ' + (
+                kind === 'success'
+                    ? 'bg-green-500/10 border border-green-500/40 text-green-300'
+                    : 'bg-red-500/10 border border-red-500/40 text-red-300'
+            );
+        };
+
+        feedback.className = 'hidden text-sm rounded-lg px-4 py-3';
         button.textContent = 'Invio in corso...';
         button.disabled = true;
 
-        // Simulate form submission
-        setTimeout(() => {
-            alert('Grazie per la tua richiesta! Ti contatteremo presto.');
-            event.target.reset();
-            button.textContent = originalText;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const payload = {
+            nome:      form.nome.value.trim(),
+            cognome:   form.cognome.value.trim(),
+            email:     form.email.value.trim(),
+            telefono:  form.telefono.value.trim(),
+            tipo:      form.tipo.value,
+            messaggio: form.messaggio.value.trim(),
+            website:   form.website.value, // honeypot
+        };
+
+        try {
+            const res = await fetch('/api/contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type':     'application/json',
+                    'Accept':           'application/json',
+                    'X-CSRF-TOKEN':     csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (res.ok) {
+                showFeedback('Grazie! La tua richiesta è stata inviata, ti ricontatteremo a breve.', 'success');
+                form.reset();
+            } else if (res.status === 422) {
+                const data = await res.json().catch(() => ({}));
+                const firstErr = data.errors ? Object.values(data.errors)[0]?.[0] : null;
+                showFeedback(firstErr || 'Controlla i campi del modulo e riprova.', 'error');
+            } else if (res.status === 429) {
+                showFeedback('Troppe richieste ravvicinate, attendi un minuto e riprova.', 'error');
+            } else {
+                const data = await res.json().catch(() => ({}));
+                showFeedback(data.message || 'Errore durante l\'invio. Riprova tra qualche istante.', 'error');
+            }
+        } catch (_) {
+            showFeedback('Errore di rete: verifica la connessione e riprova.', 'error');
+        } finally {
+            button.textContent = originalTxt;
             button.disabled = false;
-        }, 2000);
+        }
     }
 
     // Cookie banner functions

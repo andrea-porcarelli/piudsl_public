@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\TechnicianController;
@@ -10,6 +11,10 @@ Route::get('/', [HomeController::class, 'index']);
 
 // Avvisi pubblici in evidenza (sola lettura — proxy verso API esterna)
 Route::get('/api/notice', [NoticeController::class, 'show']);
+
+// Form contatti homepage — invio mail interno (non passa dall'API esterna)
+Route::post('/api/contact', [ContactController::class, 'submit'])
+    ->middleware('throttle:5,1');
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
