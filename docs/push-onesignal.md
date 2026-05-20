@@ -22,7 +22,7 @@ OneSignal.
                                                    ▼
 ┌──────────────────────────┐         ┌─────────────────────────────┐
 │  Browser / PWA tecnico   │ ◀────── │  OneSignal Web Push          │
-│  /technician             │         │  (gestisce subscription      │
+│  /tech                   │         │  (gestisce subscription      │
 │  OneSignal.login(userId) │         │   con external_id = user_id) │
 └──────────────────────────┘         └─────────────────────────────┘
 ```
@@ -97,7 +97,7 @@ Content-Type: application/json
   },
   "headings": { "it": "Nuovo intervento assegnato" },
   "contents": { "it": "Mario Rossi — Via Roma 1 — 25/05 ore 09:00" },
-  "url": "https://www.piudsl.it/technician?eventId=15",
+  "url": "https://www.piudsl.it/tech?eventId=15",
 
   "web_push_topic": "calendar-event-15",
   "ttl": 86400
@@ -111,7 +111,7 @@ Campi importanti:
 | `target_channel` | `"push"` | evita che venga interpretato come email/SMS |
 | `include_aliases.external_id` | array di stringhe | `user_id` del tecnico **come stringa** (cast esplicito, anche se è int sul DB) |
 | `headings` / `contents` | oggetti localizzati | `it` è obbligatorio; se in futuro avrai tecnici stranieri aggiungi `en` |
-| `url` | deep link | apre `/technician?eventId={id}`. Richiede che la dashboard legga il query param per scrollare/aprire l'evento (follow-up frontend) |
+| `url` | deep link | apre `/tech?eventId={id}`. Richiede che la dashboard legga il query param per scrollare/aprire l'evento (follow-up frontend) |
 | `web_push_topic` | `calendar-event-{id}` | due notifiche con lo stesso topic si sostituiscono: utile se cambi orario dopo aver già notificato |
 | `ttl` | `86400` (24h) | dopo 24h il browser scarta la notifica se non recapitata |
 

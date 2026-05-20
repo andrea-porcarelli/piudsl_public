@@ -3,15 +3,15 @@
 In questa cartella va il file **`OneSignalSDKWorker.js`** scaricato dal wizard di
 OneSignal (Settings → Web Configuration → step "Upload Service Worker File").
 
-Il file è referenziato dalla `<head>` di `resources/views/technician/dashboard.blade.php`
+Il file è referenziato dalla `<head>` di `resources/views/tech/dashboard.blade.php`
 con:
 
 ```js
-serviceWorkerPath:  '/technician/OneSignalSDKWorker.js'
-serviceWorkerParam: { scope: '/technician/' }
+serviceWorkerPath:  '/tech/OneSignalSDKWorker.js'
+serviceWorkerParam: { scope: '/tech/' }
 ```
 
-Lo scope `/technician/` fa sì che il service worker venga registrato solo per
+Lo scope `/tech/` fa sì che il service worker venga registrato solo per
 l'area tecnico e non per la landing pubblica.
 
 ## Aggiornamento
@@ -28,5 +28,5 @@ self-contained.
 
 Il file `index.php` qui dentro **non** è il service worker: è uno shim che fa da front
 controller per `php artisan serve` (usato in produzione). Senza, il PHP built-in web server
-vedrebbe questa directory e risponderebbe 404 alla rotta Laravel `GET /technician`. Se
+vedrebbe questa directory e risponderebbe 404 alla rotta Laravel `GET /tech`. Se
 aggiorni il worker, lascia `index.php` dov'è.

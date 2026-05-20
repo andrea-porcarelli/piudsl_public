@@ -78,8 +78,8 @@
             await OneSignal.init({
                 appId: @json(config('services.onesignal.app_id')),
                 safari_web_id: @json(config('services.onesignal.safari_web_id')),
-                serviceWorkerPath: '/technician/OneSignalSDKWorker.js',
-                serviceWorkerParam: { scope: '/technician/' },
+                serviceWorkerPath: '/tech/OneSignalSDKWorker.js',
+                serviceWorkerParam: { scope: '/tech/' },
                 notifyButton: {
                     enable: true,
                     size: 'medium',
