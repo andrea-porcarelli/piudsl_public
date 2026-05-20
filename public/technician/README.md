@@ -23,3 +23,10 @@ al successivo caricamento della dashboard.
 
 Non rinominare il file, non aggiungere `importScripts` extra: il worker è
 self-contained.
+
+## `index.php` in questa cartella — non cancellarlo
+
+Il file `index.php` qui dentro **non** è il service worker: è uno shim che fa da front
+controller per `php artisan serve` (usato in produzione). Senza, il PHP built-in web server
+vedrebbe questa directory e risponderebbe 404 alla rotta Laravel `GET /technician`. Se
+aggiorni il worker, lascia `index.php` dov'è.
