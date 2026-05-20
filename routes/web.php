@@ -19,7 +19,7 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 
 Route::middleware('technician')->group(function () {
-    Route::get('/technician', [TechnicianController::class, 'dashboard']);
+    Route::get('/tech', [TechnicianController::class, 'dashboard']);
 
     Route::prefix('/api/technician')->group(function () {
         // Liste

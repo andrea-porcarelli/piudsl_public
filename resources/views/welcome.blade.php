@@ -7,6 +7,9 @@
     <meta name="description" content="PiùDSL - Provider Internet specializzato in connettività fibra ottica, servizi VoIP, videosorveglianza e soluzioni per business e PA.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -183,12 +186,12 @@
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <button class="bg-brand-600 hover:bg-brand-700 text-white px-8 py-3 rounded-xl font-semibold text-lg transition-all duration-200 hover:shadow-xl hover:shadow-brand-200 hover:-translate-y-1">
+                    <a href="#pricing" class="text-center bg-brand-600 hover:bg-brand-700 text-white px-8 py-3 rounded-xl font-semibold text-lg transition-all duration-200 hover:shadow-xl hover:shadow-brand-200 hover:-translate-y-1">
                         Scopri le Offerte
-                    </button>
-                    <button class="border-2 border-gray-300 hover:border-brand-600 text-gray-700 hover:text-brand-600 px-8 py-3 rounded-xl font-semibold text-lg transition-all duration-200 hover:bg-brand-50">
+                    </a>
+                    <a href="#contact" class="text-center border-2 border-gray-300 hover:border-brand-600 text-gray-700 hover:text-brand-600 px-8 py-3 rounded-xl font-semibold text-lg transition-all duration-200 hover:bg-brand-50">
                         Contattaci
-                    </button>
+                    </a>
                 </div>
 
                 <!-- Stats -->

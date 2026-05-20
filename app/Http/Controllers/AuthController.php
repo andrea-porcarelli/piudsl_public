@@ -70,7 +70,7 @@ class AuthController extends Controller
             return response()->json([
                 'success'  => true,
                 'role'     => 'technician',
-                'redirect' => '/technician',
+                'redirect' => '/tech',
             ]);
         }
 
