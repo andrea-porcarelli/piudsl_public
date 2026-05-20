@@ -7,6 +7,13 @@
     <meta name="description" content="PiùDSL - Provider Internet specializzato in connettività fibra ottica, servizi VoIP, videosorveglianza e soluzioni per business e PA.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="PiùDSL">
+    <meta name="theme-color" content="#0284c7">
+
+    <link rel="manifest" href="/manifest-public.webmanifest">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 

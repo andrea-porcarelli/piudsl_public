@@ -80,7 +80,26 @@
                 safari_web_id: @json(config('services.onesignal.safari_web_id')),
                 serviceWorkerPath: '/technician/OneSignalSDKWorker.js',
                 serviceWorkerParam: { scope: '/technician/' },
-                notifyButton: { enable: false },
+                notifyButton: {
+                    enable: true,
+                    size: 'medium',
+                    position: 'bottom-right',
+                    showCredit: false,
+                    text: {
+                        'tip.state.unsubscribed':     'Attiva le notifiche',
+                        'tip.state.subscribed':       'Notifiche attive',
+                        'tip.state.blocked':          'Notifiche bloccate',
+                        'message.prenotify':          'Clicca per attivare le notifiche',
+                        'message.action.subscribed':  'Grazie! Riceverai le notifiche.',
+                        'message.action.resubscribed':'Notifiche riattivate.',
+                        'message.action.unsubscribed':'Notifiche disattivate.',
+                        'dialog.main.title':          'Notifiche PiùDSL Tecnico',
+                        'dialog.main.button.subscribe':'ATTIVA',
+                        'dialog.main.button.unsubscribe':'DISATTIVA',
+                        'dialog.blocked.title':       'Sblocca le notifiche',
+                        'dialog.blocked.message':     'Per ricevere le notifiche segui le istruzioni del browser.',
+                    },
+                },
                 allowLocalhostAsSecureOrigin: @json(app()->environment('local')),
             });
             try {
@@ -394,6 +413,19 @@ const loaded = { agenda: false, invoices: false };
 let allTickets = [];
 let activeFilter = 'all';
 
+// Mostriamo solo ticket aperti/in corso, ordinati per priorità decrescente.
+const TICKET_LEVEL_ORDER = { high: 0, normal: 1, low: 2 };
+function buildAllTickets(events) {
+    return events
+        .filter(e => e.event_type === 'ticket' && (e.status === 'open' || e.status === 'in_progress'))
+        .slice()
+        .sort((a, b) => {
+            const la = TICKET_LEVEL_ORDER[a.ticket_level ?? a.level] ?? 99;
+            const lb = TICKET_LEVEL_ORDER[b.ticket_level ?? b.level] ?? 99;
+            return la - lb;
+        });
+}
+
 // ── Calendar events state ─────────────────────────────────────────────────────
 let allCalendarEvents = [];
 let allActivities     = [];
@@ -542,7 +574,7 @@ async function loadAgenda() {
             ((ev.start_date ?? '') <= date && (ev.end_date ?? ev.start_date ?? '') >= date)
         );
         allActivities = (actJson.data ?? []).filter(act => act.event_at === date);
-        allTickets    = allCalendarEvents.filter(ev => ev.event_type === 'ticket');
+        allTickets    = buildAllTickets(allCalendarEvents);
         calendarFilter = 'open';
 
         if (!allCalendarEvents.length && !allActivities.length && !allTickets.length) {
@@ -700,7 +732,6 @@ function renderTicketsBlock() {
             <button onclick="filterAgendaTickets('all')"         id="filter-all"         class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'all'         ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Tutti</button>
             <button onclick="filterAgendaTickets('open')"        id="filter-open"        class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'open'        ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Aperti</button>
             <button onclick="filterAgendaTickets('in_progress')" id="filter-in_progress" class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'in_progress' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">In corso</button>
-            <button onclick="filterAgendaTickets('close')"       id="filter-close"       class="ticket-filter flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${activeFilter === 'close'       ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}">Chiusi</button>
         </div>
         <div id="agenda-tickets-cards" class="space-y-3 mt-2">${renderTicketCards()}</div>
     </div>`;
@@ -1298,7 +1329,7 @@ async function updateTicketStatus(id) {
         if (res.ok) {
             const ev = allCalendarEvents.find(e => e.id === id);
             if (ev) ev.status = newStatus;
-            allTickets = allCalendarEvents.filter(e => e.event_type === 'ticket');
+            allTickets = buildAllTickets(allCalendarEvents);
 
             btn.textContent = '✓';
             btn.className = btn.className.replace('bg-brand-600 hover:bg-brand-700', 'bg-green-500');
@@ -1675,7 +1706,7 @@ async function saveSheetChanges() {
                     // Aggiorna in-memory e ri-sincronizza allTickets se necessario
                     const ev = allCalendarEvents.find(e => e.id === _sheetId);
                     if (ev) { ev.status = _sheetData.status ?? status; }
-                    allTickets = allCalendarEvents.filter(e => e.event_type === 'ticket');
+                    allTickets = buildAllTickets(allCalendarEvents);
                     const c = document.getElementById('agenda-tickets-cards');
                     if (c) { c.innerHTML = renderTicketCards(); feather.replace(); }
                 }

@@ -10,6 +10,7 @@
 
     reverse_proxy piudsl_app_panel:8000
 
-    # Il PWA manifest richiede MIME application/manifest+json
-    header /manifest.webmanifest Content-Type "application/manifest+json"
+    # I manifest PWA richiedono MIME application/manifest+json
+    header /manifest.webmanifest        Content-Type "application/manifest+json"
+    header /manifest-public.webmanifest Content-Type "application/manifest+json"
 }
