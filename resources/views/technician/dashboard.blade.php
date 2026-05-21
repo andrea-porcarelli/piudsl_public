@@ -80,26 +80,7 @@
                 safari_web_id: @json(config('services.onesignal.safari_web_id')),
                 serviceWorkerPath: '/tech/OneSignalSDKWorker.js',
                 serviceWorkerParam: { scope: '/tech/' },
-                notifyButton: {
-                    enable: true,
-                    size: 'medium',
-                    position: 'bottom-right',
-                    showCredit: false,
-                    text: {
-                        'tip.state.unsubscribed':     'Attiva le notifiche',
-                        'tip.state.subscribed':       'Notifiche attive',
-                        'tip.state.blocked':          'Notifiche bloccate',
-                        'message.prenotify':          'Clicca per attivare le notifiche',
-                        'message.action.subscribed':  'Grazie! Riceverai le notifiche.',
-                        'message.action.resubscribed':'Notifiche riattivate.',
-                        'message.action.unsubscribed':'Notifiche disattivate.',
-                        'dialog.main.title':          'Notifiche PiùDSL Tecnico',
-                        'dialog.main.button.subscribe':'ATTIVA',
-                        'dialog.main.button.unsubscribe':'DISATTIVA',
-                        'dialog.blocked.title':       'Sblocca le notifiche',
-                        'dialog.blocked.message':     'Per ricevere le notifiche segui le istruzioni del browser.',
-                    },
-                },
+                notifyButton: { enable: false },
                 allowLocalhostAsSecureOrigin: @json(app()->environment('local')),
             });
             try {
@@ -107,6 +88,9 @@
             } catch (e) {
                 console.warn('OneSignal.login failed', e);
             }
+            updateNotifButton();
+            OneSignal.User.PushSubscription.addEventListener('change', updateNotifButton);
+            OneSignal.Notifications.addEventListener('permissionChange', updateNotifButton);
         });
     </script>
     @endif
@@ -120,14 +104,24 @@
             <img src="/piudsl.png" alt="PiùDSL" class="h-8 w-auto">
         </div>
 
-        <span class="text-sm font-medium text-brand-100 truncate max-w-[140px]">{{ $userName }}</span>
+        <span class="text-sm font-medium text-brand-100 truncate max-w-[120px]">{{ $userName }}</span>
 
-        <form method="POST" action="/auth/logout" id="logout-form">
-            @csrf
-            <button type="button" onclick="handleLogout()" class="p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="Logout">
-                <i data-feather="log-out" class="w-5 h-5"></i>
+        <div class="flex items-center gap-1">
+            @if(config('services.onesignal.app_id'))
+            <button type="button" id="notif-toggle" onclick="handleNotifToggle()"
+                    class="hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+                    aria-label="Attiva notifiche">
+                <i data-feather="bell-off" class="w-5 h-5"></i>
             </button>
-        </form>
+            @endif
+
+            <form method="POST" action="/auth/logout" id="logout-form" class="contents">
+                @csrf
+                <button type="button" onclick="handleLogout()" class="p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="Logout">
+                    <i data-feather="log-out" class="w-5 h-5"></i>
+                </button>
+            </form>
+        </div>
     </div>
 </header>
 
@@ -513,6 +507,37 @@ function statusBadge(status) {
         completed: 'Completato', pending: 'In attesa', close: 'Chiuso', done: 'Fatto',
     };
     return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${map[status] ?? 'bg-gray-100 text-gray-500'}">${labels[status] ?? status}</span>`;
+}
+
+// ── Notifiche push (OneSignal) ────────────────────────────────────────────────
+// Su iOS PWA la campanella floating di OneSignal non appare in modo affidabile,
+// quindi gestiamo lo stato della sottoscrizione con un bottone nell'header.
+async function handleNotifToggle() {
+    if (!window.OneSignal) return;
+    try {
+        const optedIn = OneSignal.User.PushSubscription.optedIn;
+        if (optedIn) {
+            await OneSignal.User.PushSubscription.optOut();
+        } else {
+            // optIn() richiede al browser il permesso se non ancora dato.
+            await OneSignal.User.PushSubscription.optIn();
+        }
+    } catch (e) {
+        console.warn('Notif toggle failed', e);
+    }
+    updateNotifButton();
+}
+
+function updateNotifButton() {
+    const btn = document.getElementById('notif-toggle');
+    if (!btn || !window.OneSignal) return;
+    const permission = OneSignal.Notifications.permission; // boolean: true = granted
+    const optedIn    = OneSignal.User.PushSubscription.optedIn === true;
+    const active     = permission && optedIn;
+    btn.classList.remove('hidden');
+    btn.setAttribute('aria-label', active ? 'Disattiva notifiche' : 'Attiva notifiche');
+    btn.innerHTML = '<i data-feather="' + (active ? 'bell' : 'bell-off') + '" class="w-5 h-5"></i>';
+    if (window.feather) feather.replace();
 }
 
 // ── Logout ────────────────────────────────────────────────────────────────────
