@@ -78,7 +78,7 @@
             await OneSignal.init({
                 appId: @json(config('services.onesignal.app_id')),
                 safari_web_id: @json(config('services.onesignal.safari_web_id')),
-                serviceWorkerPath: '/tech/OneSignalSDKWorker.js',
+                serviceWorkerPath: 'tech/OneSignalSDKWorker.js',
                 serviceWorkerParam: { scope: '/tech/' },
                 notifyButton: { enable: false },
                 allowLocalhostAsSecureOrigin: @json(app()->environment('local')),
