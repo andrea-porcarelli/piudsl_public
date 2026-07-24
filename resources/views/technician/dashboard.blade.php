@@ -2044,7 +2044,6 @@ function renderActivityCard(act) {
                 <i data-feather="clock" class="w-3 h-3"></i>
                 <span>${act.event_time ? act.event_time.slice(0, 5) : '—'}</span>
             </div>
-            ${act.status !== 'completed' ? _buildGpsUpdateSection(act, 'card') : ''}
             <button onclick="openActivityDetail('activity', ${act.id})"
                 class="mt-3 w-full flex items-center justify-center space-x-1.5 text-xs text-amber-600 font-semibold py-2 border border-amber-200 rounded-xl active:bg-amber-50 transition-colors">
                 <i data-feather="edit-2" class="w-3.5 h-3.5"></i>
