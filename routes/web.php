@@ -25,6 +25,7 @@ Route::middleware('technician')->group(function () {
         // Liste
         Route::get('/calendar-events',             [TechnicianController::class, 'calendarEvents']);
         Route::get('/cart-activities',             [TechnicianController::class, 'cartActivities']);
+        Route::get('/tickets',                     [TechnicianController::class, 'tickets']);
         Route::get('/products',                    [TechnicianController::class, 'products']);
 
         // Dettaglio + azioni calendario
@@ -40,11 +41,26 @@ Route::middleware('technician')->group(function () {
         Route::post('/cart-activities/{id}/extra-products',                   [TechnicianController::class, 'addExtraProduct']);
         Route::delete('/cart-activities/{id}/extra-products/{extraProductId}',[TechnicianController::class, 'removeExtraProduct']);
 
+        // Ticket (lista dedicata + azioni)
+        Route::put('/tickets/{id}',                [TechnicianController::class, 'updateTicket']);
+        Route::post('/tickets/{id}/notes',        [TechnicianController::class, 'addTicketNote']);
+        Route::post('/tickets/{id}/attachments',  [TechnicianController::class, 'uploadTicketAttachment']);
+
         // Segnalazioni al backoffice
         Route::post('/reports', [TechnicianController::class, 'createReport']);
+
+        // Cassa tecnico (sola lettura)
+        Route::get('/cash/summary',                      [TechnicianController::class, 'technicianCashSummary']);
 
         // Fatture
         Route::get('/invoices/paper',                    [TechnicianController::class, 'paperInvoices']);
         Route::patch('/invoices/paper/{id}/deliver',     [TechnicianController::class, 'deliverPaperInvoice']);
+        Route::post('/invoices/paper/{id}/undeliver',     [TechnicianController::class, 'undeliverPaperInvoice']);
+
+        // Recupero impianti
+        Route::get('/equipment-recoveries',                              [TechnicianController::class, 'equipmentRecoveries']);
+        Route::get('/equipment-recoveries/{id}',                         [TechnicianController::class, 'equipmentRecoveryDetail']);
+        Route::post('/equipment-recoveries/{id}/contact',                [TechnicianController::class, 'equipmentRecoveryContact']);
+        Route::post('/equipment-recoveries/{id}/complete',               [TechnicianController::class, 'equipmentRecoveryComplete']);
     });
 });
