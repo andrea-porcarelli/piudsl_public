@@ -35,6 +35,7 @@ Route::middleware('technician')->group(function () {
         // Dettaglio + azioni cart activities
         Route::get('/cart-activities/{id}',        [TechnicianController::class, 'cartActivityDetail']);
         Route::patch('/cart-activities/{id}',      [TechnicianController::class, 'updateCartActivity']);
+        Route::post('/cart-activities/{id}/plant-coordinates', [TechnicianController::class, 'updateCartActivityPlantCoordinates']);
         Route::post('/cart-activities/{id}/attachments',                      [TechnicianController::class, 'uploadCartActivityAttachment']);
         Route::post('/cart-activities/{id}/extra-products',                   [TechnicianController::class, 'addExtraProduct']);
         Route::delete('/cart-activities/{id}/extra-products/{extraProductId}',[TechnicianController::class, 'removeExtraProduct']);

@@ -252,6 +252,15 @@ class TechnicianController extends Controller
         return $this->proxy($request, 'patch', "/cart-activities/{$id}", $data);
     }
 
+    public function updateCartActivityPlantCoordinates(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'coordinates' => ['required', 'string', 'regex:/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/'],
+        ]);
+
+        return $this->proxy($request, 'post', "/cart-activities/{$id}/plant-coordinates", $data);
+    }
+
     public function uploadCartActivityAttachment(Request $request, int $id): JsonResponse
     {
         $request->validate(['images' => ['required'], 'images.*' => ['file', 'image', 'max:10240']]);
