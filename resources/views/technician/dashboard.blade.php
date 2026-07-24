@@ -2044,6 +2044,7 @@ function renderActivityCard(act) {
                 <i data-feather="clock" class="w-3 h-3"></i>
                 <span>${act.event_time ? act.event_time.slice(0, 5) : '—'}</span>
             </div>
+            ${act.status !== 'completed' ? _buildGpsUpdateSection(act, 'card') : ''}
             <button onclick="openActivityDetail('activity', ${act.id})"
                 class="mt-3 w-full flex items-center justify-center space-x-1.5 text-xs text-amber-600 font-semibold py-2 border border-amber-200 rounded-xl active:bg-amber-50 transition-colors">
                 <i data-feather="edit-2" class="w-3.5 h-3.5"></i>
@@ -3552,6 +3553,7 @@ function _buildActivityContent(d) {
     ${_buildCollectFromCustomerSection(d)}
     ${_buildExtraProductsSection(d)}
     ${_buildAttachmentsSection(d.attachments ?? [])}
+    ${_buildGpsUpdateSection(d, 'sheet')}
     ${_buildFormSection(d.status, d.notes ?? [], {
         readOnlyStatus: !activityCanChangeStatus(d),
         statusLabel: d.status_label ?? null,
@@ -3762,6 +3764,110 @@ async function _loadAvailableProducts() {
         if (res.ok) { const j = await res.json(); _availableProducts = j.data ?? []; }
         else _availableProducts = [];
     } catch (_) { _availableProducts = []; }
+}
+
+function _buildGpsUpdateSection(d, prefix = 'sheet') {
+    if (d.status === 'completed') return '';
+
+    const id = d.id;
+    const coords = d.coordinates ? esc(d.coordinates) : '';
+    const btnId = `${prefix}-gps-btn-${id}`;
+    const labelId = `${prefix}-gps-label-${id}`;
+    const coordsId = `${prefix}-gps-coords-${id}`;
+    const fbId = `${prefix}-gps-fb-${id}`;
+    const errId = `${prefix}-gps-err-${id}`;
+
+    return `<div class="bg-sky-50 border border-sky-100 rounded-2xl p-4 space-y-3" id="${prefix}-gps-wrap-${id}">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Posizione GPS impianto</p>
+        <p class="text-xs text-gray-500">Usa questa funzione sul posto per rendere Maps/Waze più precisi. L'indirizzo civico non viene modificato.</p>
+        <p class="text-xs text-gray-600" id="${coordsId}">${coords
+            ? `<span class="font-medium">Attuali:</span> ${coords}`
+            : '<span class="text-gray-400">Nessuna coordinata salvata.</span>'}</p>
+        <button type="button" onclick="updatePlantGps(${id}, '${prefix}')" id="${btnId}"
+            class="w-full flex items-center justify-center space-x-2 text-sm font-semibold bg-sky-600 text-white py-3 rounded-xl active:bg-sky-700 disabled:opacity-50">
+            <i data-feather="crosshair" class="w-4 h-4"></i>
+            <span id="${labelId}">Aggiorna posizione GPS</span>
+        </button>
+        <p id="${fbId}" class="hidden text-xs text-green-600 font-medium text-center"></p>
+        <p id="${errId}" class="hidden text-xs text-red-500 font-medium text-center"></p>
+    </div>`;
+}
+
+async function updatePlantGps(activityId, prefix = 'sheet') {
+    const btn   = document.getElementById(`${prefix}-gps-btn-${activityId}`);
+    const label = document.getElementById(`${prefix}-gps-label-${activityId}`);
+    const fb    = document.getElementById(`${prefix}-gps-fb-${activityId}`);
+    const err   = document.getElementById(`${prefix}-gps-err-${activityId}`);
+
+    fb.classList.add('hidden');
+    err.classList.add('hidden');
+
+    if (!navigator.geolocation) {
+        err.textContent = 'Geolocalizzazione non supportata da questo dispositivo.';
+        err.classList.remove('hidden');
+        return;
+    }
+
+    btn.disabled = true;
+    if (label) label.textContent = 'Rilevamento…';
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        const coordinates = `${pos.coords.latitude},${pos.coords.longitude}`;
+
+        try {
+            const res = await fetch(`/api/technician/cart-activities/${activityId}/plant-coordinates`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body: JSON.stringify({ coordinates }),
+            });
+
+            if (res.status === 401) { showSessionExpired(); return; }
+
+            const json = await res.json().catch(() => ({}));
+
+            if (res.ok) {
+                const coordsEl = document.getElementById(`${prefix}-gps-coords-${activityId}`);
+                if (coordsEl) {
+                    coordsEl.innerHTML = `<span class="font-medium">Attuali:</span> ${esc(json.data?.coordinates ?? coordinates)}`;
+                }
+                const cardCoordsEl = document.getElementById(`card-gps-coords-${activityId}`);
+                if (cardCoordsEl) {
+                    cardCoordsEl.innerHTML = `<span class="font-medium">Attuali:</span> ${esc(json.data?.coordinates ?? coordinates)}`;
+                }
+                if (_sheetData && json.data) {
+                    Object.assign(_sheetData, json.data);
+                }
+                const act = _agendaCache.activities.find(a => a.id === activityId);
+                if (act && json.data) {
+                    if (json.data.coordinates) act.coordinates = json.data.coordinates;
+                    if (json.data.maps_url) act.maps_url = json.data.maps_url;
+                    if (json.data.waze_url) act.waze_url = json.data.waze_url;
+                }
+                fb.textContent = 'Posizione GPS aggiornata.';
+                fb.classList.remove('hidden');
+            } else {
+                err.textContent = json.message ?? 'Errore durante l\'aggiornamento.';
+                err.classList.remove('hidden');
+            }
+        } catch (_) {
+            err.textContent = 'Errore di rete. Riprova.';
+            err.classList.remove('hidden');
+        }
+
+        btn.disabled = false;
+        if (label) label.textContent = 'Aggiorna posizione GPS';
+        feather.replace();
+    }, (geoErr) => {
+        const messages = {
+            1: 'Permesso posizione negato. Abilita il GPS nelle impostazioni del telefono.',
+            2: 'Posizione non disponibile. Riprova all\'aperto.',
+            3: 'Timeout GPS. Riprova.',
+        };
+        err.textContent = messages[geoErr.code] ?? 'Impossibile rilevare la posizione.';
+        err.classList.remove('hidden');
+        btn.disabled = false;
+        if (label) label.textContent = 'Aggiorna posizione GPS';
+    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
 }
 
 async function addExtraProduct(activityId) {
