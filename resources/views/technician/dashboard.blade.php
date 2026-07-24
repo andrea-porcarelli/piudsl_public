@@ -486,6 +486,12 @@ function formatDate(dateStr, timeStr) {
            (timeStr ? ' ' + timeStr.slice(0, 5) : '');
 }
 
+function activityMatchesAgendaDate(act, date) {
+    const raw = act?.event_at;
+    if (!raw || !date) return false;
+    return String(raw).slice(0, 10) === String(date).slice(0, 10);
+}
+
 function levelBadge(level) {
     const map = { high: 'bg-red-100 text-red-700', normal: 'bg-blue-100 text-blue-700', low: 'bg-gray-100 text-gray-600' };
     const labels = { high: 'Alta', normal: 'Normale', low: 'Bassa' };
@@ -585,7 +591,7 @@ async function loadAgenda() {
     try {
         const [calRes, actRes] = await Promise.all([
             fetch('/api/technician/calendar-events', { headers: { 'X-CSRF-TOKEN': CSRF } }),
-            fetch('/api/technician/cart-activities',  { headers: { 'X-CSRF-TOKEN': CSRF } }),
+            fetch('/api/technician/cart-activities?date=' + encodeURIComponent(date), { headers: { 'X-CSRF-TOKEN': CSRF } }),
         ]);
 
         if ([calRes, actRes].some(r => r.status === 401)) { showSessionExpired(); return; }
@@ -598,7 +604,9 @@ async function loadAgenda() {
             ev.event_type === 'ticket' ||
             ((ev.start_date ?? '') <= date && (ev.end_date ?? ev.start_date ?? '') >= date)
         );
-        allActivities = (actJson.data ?? []).filter(act => act.event_at === date);
+        allActivities = (actJson.data ?? []).filter(act =>
+            activityMatchesAgendaDate(act, date) && act.status === 'open'
+        );
         allTickets    = buildAllTickets(allCalendarEvents);
         calendarFilter = 'open';
 
@@ -909,7 +917,7 @@ function _renderCalOvGrid() {
         const hasEv  = _calOvData.events.some(ev =>
             (ev.start_date ?? '') <= dateStr && (ev.end_date ?? ev.start_date ?? '') >= dateStr
         );
-        const hasAct = _calOvData.activities.some(act => act.event_at === dateStr);
+        const hasAct = _calOvData.activities.some(act => activityMatchesAgendaDate(act, dateStr));
         const hasTick = _calOvData.tickets.some(t =>
             (t.start_date ?? '') <= dateStr && (t.end_date ?? t.start_date ?? '') >= dateStr
         );
@@ -956,7 +964,7 @@ function _renderCalOvDetail() {
     const evs  = _calOvData.events.filter(ev =>
         (ev.start_date ?? '') <= d && (ev.end_date ?? ev.start_date ?? '') >= d
     );
-    const acts = _calOvData.activities.filter(act => act.event_at === d);
+    const acts = _calOvData.activities.filter(act => activityMatchesAgendaDate(act, d));
     const ticks = _calOvData.tickets.filter(t =>
         (t.start_date ?? '') <= d && (t.end_date ?? t.start_date ?? '') >= d
     );

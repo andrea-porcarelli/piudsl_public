@@ -46,9 +46,15 @@ class TechnicianController extends Controller
 
     public function cartActivities(Request $request): JsonResponse
     {
+        $query = [];
+        if ($request->filled('date')) {
+            $request->validate(['date' => 'date_format:Y-m-d']);
+            $query['date'] = $request->input('date');
+        }
+
         $response = Http::timeout(10)
             ->withHeaders($this->apiHeaders($request))
-            ->get($this->baseUrl() . '/cart-activities');
+            ->get($this->baseUrl() . '/cart-activities', $query);
 
         if ($response->status() === 401) {
             return response()->json(['success' => false, 'message' => 'Sessione scaduta.'], 401);
