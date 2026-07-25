@@ -966,13 +966,13 @@ function getDailyItems(date) {
         .sort((a, b) => sortKeyTime(a.event_time).localeCompare(sortKeyTime(b.event_time)));
 
     const events = _agendaCache.calendar
-        .filter(e => e.event_type !== 'ticket' && dateInRange(date, e.start_date, e.end_date ?? e.start_date))
+        .filter(e => e.event_type !== 'ticket' && !e.ticket_level && dateInRange(date, e.start_date, e.end_date ?? e.start_date))
         .slice()
         .sort((a, b) => sortKeyTime(a.start_time).localeCompare(sortKeyTime(b.start_time)));
 
     // Ticket solo se programmati in calendario per questa data (come il gestionale)
     const tickets = _agendaCache.calendar
-        .filter(e => e.event_type === 'ticket' && dateInRange(date, e.start_date, e.end_date ?? e.start_date))
+        .filter(e => (e.event_type === 'ticket' || e.ticket_level) && dateInRange(date, e.start_date, e.end_date ?? e.start_date))
         .slice()
         .sort((a, b) => {
             const la = TICKET_LEVEL_ORDER[a.ticket_level ?? a.level] ?? 99;
@@ -1777,13 +1777,14 @@ function statusBadge(status, labelOverride) {
         in_progress: 'bg-yellow-100 text-yellow-700',
         suspended:   'bg-orange-100 text-orange-700',
         completed:   'bg-green-100 text-green-700',
+        archived:    'bg-gray-200 text-gray-700',
         pending:     'bg-purple-100 text-purple-700',
         close:       'bg-gray-100 text-gray-500',
         done:        'bg-green-100 text-green-700',
     };
     const labels = {
         open: 'Aperto', in_progress: 'In corso', suspended: 'Sospeso',
-        completed: 'Completato', pending: 'In attesa', close: 'Chiuso', done: 'Fatto',
+        completed: 'Completato', archived: 'Archiviato', pending: 'In attesa', close: 'Chiuso', done: 'Fatto',
     };
     const text = labelOverride ?? labels[status] ?? status;
     return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${map[status] ?? 'bg-gray-100 text-gray-500'}">${esc(text)}</span>`;
@@ -1954,6 +1955,7 @@ function renderTicketCard(t) {
                 <div class="flex flex-wrap gap-1.5 items-center">
                     ${level ? levelBadge(level) : ''}
                     ${statusBadge(status)}
+                    ${t.read_only || status === 'completed' ? '<span class="text-[10px] font-semibold text-gray-500">Sola lettura</span>' : ''}
                 </div>
             </div>
             <span class="font-semibold text-gray-900 text-sm leading-tight">${esc(title)}</span>
@@ -3216,6 +3218,7 @@ async function submitRecoveryComplete(recoveryId, btn) {
 let _sheetType = null;
 let _sheetId   = null;
 let _sheetData = null;
+let _sheetIsTicket = false;
 let _availableProducts = null;
 
 const SHEET_STATUS_OPTIONS = {
@@ -3239,14 +3242,27 @@ const SHEET_STATUS_OPTIONS = {
 };
 
 function activityCanEditProducts(d) {
+    if (activityIsArchived(d)) return false;
     const p = d?.permissions ?? {};
-    const u = d?.ui ?? {};
     if (p.can_edit_products === false) return false;
-    if (u.show_delete_product === false) return false;
+    if (p.can_edit_products === true) return true;
+    return d?.status !== 'completed' && !d?.read_only;
+}
+
+function activityCanAddProducts(d) {
+    if (!activityCanEditProducts(d)) return false;
+    if (d?.ui?.show_add_product === false) return false;
+    return true;
+}
+
+function activityCanDeleteProducts(d) {
+    if (!activityCanEditProducts(d)) return false;
+    if (d?.ui?.show_delete_product === false) return false;
     return true;
 }
 
 function activityCanChangeStatus(d) {
+    if (activityIsArchived(d)) return false;
     const p = d?.permissions ?? {};
     const u = d?.ui ?? {};
     if (p.can_change_status === false) return false;
@@ -3254,10 +3270,53 @@ function activityCanChangeStatus(d) {
     return true;
 }
 
+function activityIsArchived(d) {
+    return !!(d?.cart_archived || d?.status === 'archived' || d?.read_only);
+}
+
+function calendarEventIsTicket(d) {
+    if (_sheetIsTicket) return true;
+    if (d?.event_type === 'ticket') return true;
+    if (d?.ticket_level) return true;
+    const id = d?.id ?? _sheetId;
+    const cached = _agendaCache.calendar.find(e => e.id === id);
+    return cached?.event_type === 'ticket' || !!cached?.ticket_level;
+}
+
+function mergeTicketFlagsFromCache(data, id) {
+    if (!data) return data;
+    if (data.event_type === 'ticket' || data.ticket_level) {
+        if (data.event_type !== 'ticket') data.event_type = 'ticket';
+        _sheetIsTicket = true;
+        return data;
+    }
+    const cached = _agendaCache.calendar.find(e => e.id === id);
+    if (cached?.event_type === 'ticket' || cached?.ticket_level) {
+        data.event_type = 'ticket';
+        if (!data.ticket_level && cached.ticket_level) data.ticket_level = cached.ticket_level;
+        _sheetIsTicket = true;
+    }
+    return data;
+}
+
+function sheetApiBase() {
+    if (_sheetIsTicket || calendarEventIsTicket(_sheetData)) {
+        return 'calendar-events';
+    }
+    return _sheetType === 'calendar' ? 'calendar-events' : 'cart-activities';
+}
+
 async function openActivityDetail(type, id) {
     _sheetType = type;
     _sheetId   = id;
     _sheetData = null;
+    _sheetIsTicket = false;
+    _availableProducts = null;
+
+    const cachedCal = type === 'calendar' ? _agendaCache.calendar.find(e => e.id === id) : null;
+    if (cachedCal?.event_type === 'ticket' || cachedCal?.ticket_level) {
+        _sheetIsTicket = true;
+    }
 
     document.getElementById('sheet-loading').classList.remove('hidden');
     document.getElementById('sheet-loading').innerHTML = `
@@ -3299,10 +3358,12 @@ async function openActivityDetail(type, id) {
             throw new Error(apiMsg || `Errore del server (${res.status})`);
         }
 
-        _sheetData = json?.data ?? json;
+        _sheetData = mergeTicketFlagsFromCache(json?.data ?? json, id);
 
-        if (type === 'activity' && _availableProducts === null) {
-            await _loadAvailableProducts();
+        if (type === 'activity') {
+            await _loadAvailableProducts(_sheetId, 'activity');
+        } else if (_sheetIsTicket || calendarEventIsTicket(_sheetData)) {
+            await _loadAvailableProducts(_sheetId, 'calendar');
         }
 
         _renderSheetContent();
@@ -3345,7 +3406,14 @@ function _renderSheetContent() {
     document.getElementById('sheet-loading').classList.add('hidden');
     const el = document.getElementById('sheet-content');
     el.classList.remove('hidden');
-    if (_sheetType === 'calendar') el.innerHTML = _buildCalendarContent(_sheetData);
+    if (_sheetType === 'calendar') {
+        if (calendarEventIsTicket(_sheetData)) {
+            document.getElementById('sheet-header-badge').innerHTML = _sheetTypeBadgeHtml('ticket');
+        }
+        el.innerHTML = calendarEventIsTicket(_sheetData)
+            ? _buildCalendarTicketContent(_sheetData)
+            : _buildCalendarContent(_sheetData);
+    }
     if (_sheetType === 'activity') el.innerHTML = _buildActivityContent(_sheetData);
     if (_sheetType === 'ticket')   el.innerHTML = _buildTicketContent(_sheetData);
     feather.replace();
@@ -3365,7 +3433,7 @@ function _infoRow(icon, text) {
 }
 
 function _buildFormSection(currentStatus, notes = [], formOpts = {}) {
-    const { readOnlyStatus = false, statusLabel = null } = formOpts;
+    const { readOnlyStatus = false, statusLabel = null, readOnlyForm = false } = formOpts;
     const opts = (SHEET_STATUS_OPTIONS[_sheetType] ?? []).map(o =>
         `<option value="${o.value}"${currentStatus === o.value ? ' selected' : ''}>${o.label}</option>`
     ).join('');
@@ -3377,6 +3445,15 @@ function _buildFormSection(currentStatus, notes = [], formOpts = {}) {
             <p class="text-sm text-gray-700 leading-snug">${esc(n.body ?? n.note ?? '')}</p>
             <p class="text-[10px] text-gray-400 mt-0.5">${n.created_by ? esc(n.created_by) + ' · ' : ''}${formatDate(n.created_at)}</p>
         </div>`).join('');
+    const noteEditor = readOnlyForm ? '' : `<textarea id="sheet-note-input" rows="3" placeholder="Aggiungi una nota (opzionale)…"
+                class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-brand-400 bg-white placeholder-gray-400"></textarea>`;
+    const saveBtn = readOnlyForm ? '' : `<button onclick="saveSheetChanges()" id="sheet-save-btn"
+            class="w-full text-sm font-semibold bg-brand-600 text-white py-3 rounded-xl active:bg-brand-700 disabled:opacity-50">Salva</button>`;
+    const readOnlyNotice = readOnlyForm
+        ? `<p class="text-xs text-gray-500 text-center leading-snug">${_sheetType === 'calendar' && calendarEventIsTicket(_sheetData)
+            ? 'Ticket completato: sola lettura.'
+            : 'Ordine archiviato dal backoffice: sola lettura.'}</p>`
+        : '';
     return `<div class="bg-gray-50 rounded-2xl p-4 space-y-4">
         <div class="space-y-2">
             <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Stato</p>
@@ -3385,11 +3462,10 @@ function _buildFormSection(currentStatus, notes = [], formOpts = {}) {
         <div class="space-y-3">
             <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Note</p>
             ${list ? `<div class="space-y-3">${list}</div>` : '<p class="text-xs text-gray-400">Nessuna nota.</p>'}
-            <textarea id="sheet-note-input" rows="3" placeholder="Aggiungi una nota (opzionale)…"
-                class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-brand-400 bg-white placeholder-gray-400"></textarea>
+            ${noteEditor}
         </div>
-        <button onclick="saveSheetChanges()" id="sheet-save-btn"
-            class="w-full text-sm font-semibold bg-brand-600 text-white py-3 rounded-xl active:bg-brand-700 disabled:opacity-50">Salva</button>
+        ${saveBtn}
+        ${readOnlyNotice}
         <p id="sheet-save-fb" class="hidden text-xs text-green-600 font-medium text-center">Salvato.</p>
     </div>`;
 }
@@ -3447,26 +3523,48 @@ async function saveReport() {
     }
 }
 
-function _buildAttachmentsSection(attachments = []) {
+function _buildAttachmentsSection(attachments = [], allowUpload = true) {
     const thumbs = attachments.map(a =>
         `<a href="${a.url}" target="_blank" rel="noopener" class="block aspect-square rounded-xl overflow-hidden bg-gray-100 active:opacity-80">
             <img src="${a.url}" alt="" class="w-full h-full object-cover" loading="lazy">
         </a>`).join('');
+    const upload = allowUpload ? `<label class="flex items-center justify-center space-x-2 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 active:bg-gray-50 cursor-pointer">
+            <i data-feather="camera" class="w-4 h-4"></i>
+            <span id="sheet-upload-txt">Carica immagini</span>
+            <input type="file" accept="image/*" multiple class="hidden" onchange="uploadSheetImages(this)">
+        </label>
+        <p id="sheet-upload-fb" class="hidden text-xs text-green-600 font-medium">Immagini caricate.</p>` : '';
     return `<div class="space-y-3" id="sheet-attachments-wrap">
         <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Immagini</p>
         ${attachments.length
             ? `<div class="grid grid-cols-3 gap-2">${thumbs}</div>`
             : '<p class="text-xs text-gray-400">Nessuna immagine.</p>'}
-        <label class="flex items-center justify-center space-x-2 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 active:bg-gray-50 cursor-pointer">
-            <i data-feather="camera" class="w-4 h-4"></i>
-            <span id="sheet-upload-txt">Carica immagini</span>
-            <input type="file" accept="image/*" multiple class="hidden" onchange="uploadSheetImages(this)">
-        </label>
-        <p id="sheet-upload-fb" class="hidden text-xs text-green-600 font-medium">Immagini caricate.</p>
+        ${upload}
     </div>`;
 }
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
+function _buildCalendarTicketContent(d) {
+    return `
+    <div class="space-y-1">
+        <h2 class="text-lg font-bold text-gray-900 leading-snug">${esc(d.title ?? 'Ticket')}</h2>
+        ${renderActivityContactBlock(d)}
+        ${renderActivityMapLinks(d)}
+        ${_infoRow('clock', formatDate(d.start_date, d.start_time) + (d.end_date ? ' → ' + formatDate(d.end_date, d.end_time) : ''))}
+        ${d.completion_label ? `<p class="text-xs text-purple-700 font-medium pt-1">${esc(d.completion_label)}</p>` : ''}
+        ${d.description ? `<p class="text-sm text-gray-500 pt-1">${esc(d.description)}</p>` : ''}
+    </div>
+    ${_buildCollectFromCustomerSection(d)}
+    ${_buildExtraProductsSection(d, 'ticket')}
+    ${_buildAttachmentsSection(d.attachments ?? [], !activityIsArchived(d))}
+    ${_buildGpsUpdateSection(d, 'sheet')}
+    ${_buildFormSection(d.status, d.notes ?? [], {
+        readOnlyStatus: !activityCanChangeStatus(d),
+        readOnlyForm: activityIsArchived(d),
+        statusLabel: d.status_label ?? null,
+    })}`;
+}
+
 function _buildCalendarContent(d) {
     const sortedHistories = (d.histories ?? [])
         .slice()
@@ -3551,10 +3649,11 @@ function _buildActivityContent(d) {
     ${offerHtml}
     ${_buildCollectFromCustomerSection(d)}
     ${_buildExtraProductsSection(d)}
-    ${_buildAttachmentsSection(d.attachments ?? [])}
+    ${_buildAttachmentsSection(d.attachments ?? [], !activityIsArchived(d))}
     ${_buildGpsUpdateSection(d, 'sheet')}
     ${_buildFormSection(d.status, d.notes ?? [], {
         readOnlyStatus: !activityCanChangeStatus(d),
+        readOnlyForm: activityIsArchived(d),
         statusLabel: d.status_label ?? null,
     })}`;
 }
@@ -3575,10 +3674,12 @@ function _buildTicketContent(t) {
     ${_buildAttachmentsSection(t.attachments ?? [])}`;
 }
 
-function _buildExtraProductsSection(d) {
+function _buildExtraProductsSection(d, mode = 'activity') {
     const extras = d.extra_products ?? [];
     const total  = parseFloat(d.extra_products_total ?? 0);
-    const canEdit = activityCanEditProducts(d);
+    const canAdd = activityCanAddProducts(d);
+    const canDelete = activityCanDeleteProducts(d);
+    const sectionTitle = mode === 'ticket' ? 'Prodotti a pagamento' : 'Aggiunte installazione';
 
     const rows = extras.map(ep => `
         <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
@@ -3588,7 +3689,7 @@ function _buildExtraProductsSection(d) {
             </div>
             <div class="flex items-center space-x-2 flex-shrink-0">
                 <span class="text-sm font-semibold text-gray-700">€ ${parseFloat(ep.subtotal).toFixed(2)}</span>
-                ${canEdit ? `<button onclick="removeExtraProduct(${d.id},${ep.id})" class="p-1 text-red-400 active:text-red-600">
+                ${canDelete ? `<button onclick="removeExtraProduct(${d.id},${ep.id})" class="p-1 text-red-400 active:text-red-600">
                     <i data-feather="trash-2" class="w-4 h-4"></i>
                 </button>` : ''}
             </div>
@@ -3598,7 +3699,7 @@ function _buildExtraProductsSection(d) {
         `<option value="${p.id}" data-price="${p.price}">[${p.type === 'supplement' ? 'Suppl.' : 'Prod.'}] ${esc(p.name)} — €${parseFloat(p.price).toFixed(2)}</option>`
     ).join('');
 
-    const addForm = canEdit ? `
+    const addForm = canAdd ? `
         <div class="space-y-2 pt-1">
             <select id="sheet-product-select" class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-brand-400">
                 <option value="">Seleziona prodotto…</option>${prodOpts}
@@ -3613,7 +3714,7 @@ function _buildExtraProductsSection(d) {
         <p id="sheet-extra-fb" class="hidden text-xs text-green-600 font-medium">Prodotto aggiunto.</p>` : '';
 
     return `<div class="space-y-3" id="sheet-extras-wrap">
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Aggiunte installazione</p>
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">${sectionTitle}</p>
         <div class="divide-y divide-gray-100 rounded-xl border border-gray-100 px-3">
             ${rows || '<p class="text-xs text-gray-400 py-3">Nessun prodotto aggiunto.</p>'}
         </div>
@@ -3627,9 +3728,16 @@ function _buildExtraProductsSection(d) {
 
 // ── Sheet actions ─────────────────────────────────────────────────────────────
 async function saveSheetChanges() {
+    if ((_sheetType === 'activity' || (_sheetType === 'calendar' && calendarEventIsTicket(_sheetData))) && activityIsArchived(_sheetData)) {
+        return;
+    }
     const statusEl  = document.getElementById('sheet-status');
     const status    = statusEl ? statusEl.value : (_sheetData?.status ?? 'open');
-    const canChangeStatus = _sheetType !== 'activity' || activityCanChangeStatus(_sheetData);
+    const canChangeStatus = _sheetType === 'activity'
+        ? activityCanChangeStatus(_sheetData)
+        : (_sheetType === 'calendar' && calendarEventIsTicket(_sheetData)
+            ? activityCanChangeStatus(_sheetData)
+            : true);
     const noteInput = document.getElementById('sheet-note-input');
     const note      = (noteInput?.value ?? '').trim();
     const btn       = document.getElementById('sheet-save-btn');
@@ -3701,6 +3809,14 @@ async function saveSheetChanges() {
                 if (_sheetType === 'calendar') {
                     const ev = _agendaCache.calendar.find(e => e.id === _sheetId);
                     if (ev) { ev.status = _sheetData.status ?? status; }
+                    if (calendarEventIsTicket(_sheetData) && status === 'completed') {
+                        await loadTechnicianCashSummary();
+                        fb.classList.remove('hidden');
+                        await new Promise(r => setTimeout(r, 1200));
+                        closeActivitySheet();
+                        renderAgendaList();
+                        return;
+                    }
                 }
                 if (_sheetType === 'activity') {
                     const act = _agendaCache.activities.find(a => a.id === _sheetId);
@@ -3725,6 +3841,7 @@ async function saveSheetChanges() {
 
 async function uploadSheetImages(input) {
     if (!input.files.length) return;
+    if ((_sheetType === 'activity' || (_sheetType === 'calendar' && calendarEventIsTicket(_sheetData))) && activityIsArchived(_sheetData)) return;
     const txtEl = document.getElementById('sheet-upload-txt');
     const fb    = document.getElementById('sheet-upload-fb');
     txtEl.textContent = 'Caricamento…';
@@ -3757,16 +3874,34 @@ async function uploadSheetImages(input) {
     if (txt2) txt2.textContent = 'Carica immagini';
 }
 
-async function _loadAvailableProducts() {
+async function _loadAvailableProducts(entityId = null, entityType = null) {
     try {
-        const res = await fetch('/api/technician/products?types[]=product&types[]=supplement', { headers: { 'X-CSRF-TOKEN': CSRF } });
+        let url = '/api/technician/products?types[]=product&types[]=supplement';
+        if (entityType === 'activity' && entityId) url += `&cart_activity_id=${entityId}`;
+        if (entityType === 'calendar' && entityId) url += `&calendar_event_id=${entityId}`;
+        const res = await fetch(url, { headers: { 'X-CSRF-TOKEN': CSRF } });
         if (res.ok) { const j = await res.json(); _availableProducts = j.data ?? []; }
         else _availableProducts = [];
     } catch (_) { _availableProducts = []; }
 }
 
 function _buildGpsUpdateSection(d, prefix = 'sheet') {
-    if (d.status === 'completed') return '';
+    if (d.status === 'completed' || activityIsArchived(d)) return '';
+
+    const isTicket = calendarEventIsTicket(d);
+    const isActivity = _sheetType === 'activity';
+
+    if (!isTicket && !isActivity) return '';
+
+    if (d.coordinates_locked === true) {
+        return `<div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-2">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Posizione GPS impianto</p>
+            <p class="text-xs text-gray-600">Coordinate già bloccate${d.coordinates ? ` (${esc(d.coordinates)})` : ''}. Per modificarle contatta il backoffice.</p>
+        </div>`;
+    }
+
+    if (d?.permissions && d.permissions.can_update_gps === false) return '';
+    if (d?.ui?.show_gps_update === false) return '';
 
     const id = d.id;
     const coords = d.coordinates ? esc(d.coordinates) : '';
@@ -3814,7 +3949,8 @@ async function updatePlantGps(activityId, prefix = 'sheet') {
         const coordinates = `${pos.coords.latitude},${pos.coords.longitude}`;
 
         try {
-            const res = await fetch(`/api/technician/cart-activities/${activityId}/plant-coordinates`, {
+            const apiBase = sheetApiBase();
+            const res = await fetch(`/api/technician/${apiBase}/${activityId}/plant-coordinates`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
                 body: JSON.stringify({ coordinates }),
@@ -3869,7 +4005,7 @@ async function updatePlantGps(activityId, prefix = 'sheet') {
     }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
 }
 
-async function addExtraProduct(activityId) {
+async function addExtraProduct(entityId) {
     const sel = document.getElementById('sheet-product-select');
     const qty = parseInt(document.getElementById('sheet-product-qty').value);
     const pid = parseInt(sel.value);
@@ -3879,8 +4015,10 @@ async function addExtraProduct(activityId) {
     const fb  = document.getElementById('sheet-extra-fb');
     btn.disabled = true; btn.textContent = '…';
 
+    const apiBase = sheetApiBase();
+
     try {
-        const res = await fetch(`/api/technician/cart-activities/${activityId}/extra-products`, {
+        const res = await fetch(`/api/technician/${apiBase}/${entityId}/extra-products`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
             body: JSON.stringify({ product_id: pid, quantity: qty }),
@@ -3896,9 +4034,10 @@ async function addExtraProduct(activityId) {
     btn.disabled = false; btn.textContent = 'Aggiungi';
 }
 
-async function removeExtraProduct(activityId, extraProductId) {
+async function removeExtraProduct(entityId, extraProductId) {
+    const apiBase = sheetApiBase();
     try {
-        const res = await fetch(`/api/technician/cart-activities/${activityId}/extra-products/${extraProductId}`, {
+        const res = await fetch(`/api/technician/${apiBase}/${entityId}/extra-products/${extraProductId}`, {
             method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF },
         });
         if (res.status === 401) { showSessionExpired(); return; }
@@ -3906,14 +4045,21 @@ async function removeExtraProduct(activityId, extraProductId) {
     } catch (_) {}
 }
 
-async function _refreshExtras(activityId) {
-    const res = await fetch(`/api/technician/cart-activities/${activityId}`, { headers: { 'X-CSRF-TOKEN': CSRF } });
+async function _refreshExtras(entityId) {
+    const apiBase = sheetApiBase();
+    const detailPath = _sheetType === 'calendar'
+        ? `/api/technician/calendar-events/${entityId}`
+        : `/api/technician/cart-activities/${entityId}`;
+    const res = await fetch(detailPath, { headers: { 'X-CSRF-TOKEN': CSRF } });
     if (!res.ok) return;
     const json = await res.json();
     _sheetData = json.data ?? json;
 
     const extrasWrap = document.getElementById('sheet-extras-wrap');
-    if (extrasWrap) extrasWrap.outerHTML = _buildExtraProductsSection(_sheetData);
+    if (extrasWrap) {
+        const mode = (_sheetType === 'calendar' && calendarEventIsTicket(_sheetData)) ? 'ticket' : 'activity';
+        extrasWrap.outerHTML = _buildExtraProductsSection(_sheetData, mode);
+    }
 
     const collectHtml = _buildCollectFromCustomerSection(_sheetData);
     const collectWrap = document.getElementById('sheet-collect-wrap');

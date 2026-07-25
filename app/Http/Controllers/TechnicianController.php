@@ -610,11 +610,35 @@ class TechnicianController extends Controller
     public function updateCalendarEvent(Request $request, int $id): JsonResponse
     {
         $data = $request->validate([
-            'status' => ['sometimes', 'string', 'in:open,in_progress,suspended,completed,close'],
+            'status' => ['sometimes', 'string', 'in:open,in_progress,suspended,completed'],
             'note'   => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
         return $this->proxy($request, 'patch', "/calendar-events/{$id}", $data);
+    }
+
+    public function updateCalendarEventPlantCoordinates(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'coordinates' => ['required', 'string', 'regex:/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/'],
+        ]);
+
+        return $this->proxy($request, 'post', "/calendar-events/{$id}/plant-coordinates", $data);
+    }
+
+    public function addCalendarExtraProduct(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'product_id' => ['required', 'integer'],
+            'quantity'   => ['required', 'integer', 'min:1'],
+        ]);
+
+        return $this->proxy($request, 'post', "/calendar-events/{$id}/extra-products", $data);
+    }
+
+    public function removeCalendarExtraProduct(Request $request, int $id, int $extraProductId): JsonResponse
+    {
+        return $this->proxy($request, 'delete', "/calendar-events/{$id}/extra-products/{$extraProductId}");
     }
 
     public function uploadCalendarAttachment(Request $request, int $id): JsonResponse
@@ -829,6 +853,13 @@ class TechnicianController extends Controller
     {
         $types = (array) $request->query('types', ['product', 'supplement']);
         $qs    = implode('&', array_map(fn ($t) => 'types[]=' . urlencode($t), $types));
+
+        if ($request->filled('cart_activity_id')) {
+            $qs .= '&cart_activity_id=' . urlencode((string) $request->query('cart_activity_id'));
+        }
+        if ($request->filled('calendar_event_id')) {
+            $qs .= '&calendar_event_id=' . urlencode((string) $request->query('calendar_event_id'));
+        }
 
         $response = Http::timeout(10)
             ->withHeaders($this->apiHeaders($request))

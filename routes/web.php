@@ -31,6 +31,9 @@ Route::middleware('technician')->group(function () {
         // Dettaglio + azioni calendario
         Route::get('/calendar-events/{id}',        [TechnicianController::class, 'calendarEventDetail']);
         Route::patch('/calendar-events/{id}',      [TechnicianController::class, 'updateCalendarEvent']);
+        Route::post('/calendar-events/{id}/plant-coordinates', [TechnicianController::class, 'updateCalendarEventPlantCoordinates']);
+        Route::post('/calendar-events/{id}/extra-products', [TechnicianController::class, 'addCalendarExtraProduct']);
+        Route::delete('/calendar-events/{id}/extra-products/{extraProductId}', [TechnicianController::class, 'removeCalendarExtraProduct']);
         Route::post('/calendar-events/{id}/attachments', [TechnicianController::class, 'uploadCalendarAttachment']);
 
         // Dettaglio + azioni cart activities
