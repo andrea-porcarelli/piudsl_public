@@ -4024,7 +4024,19 @@ async function addExtraProduct(entityId) {
             body: JSON.stringify({ product_id: pid, quantity: qty }),
         });
         if (res.status === 401) { showSessionExpired(); return; }
+        const json = await res.json().catch(() => ({}));
         if (res.ok) {
+            const row = json.data ?? {};
+            if (!_sheetData.extra_products) _sheetData.extra_products = [];
+            _sheetData.extra_products.push({
+                id: row.id,
+                name: row.name,
+                price: row.price,
+                quantity: row.quantity,
+                subtotal: row.subtotal,
+            });
+            _sheetData.extra_products_total = row.extra_products_total ?? _sheetData.extra_products_total;
+            _renderExtrasAndCollect();
             await _refreshExtras(entityId);
             fb.classList.remove('hidden');
             setTimeout(() => fb.classList.add('hidden'), 2500);
@@ -4041,23 +4053,24 @@ async function removeExtraProduct(entityId, extraProductId) {
             method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF },
         });
         if (res.status === 401) { showSessionExpired(); return; }
-        if (res.ok) await _refreshExtras(entityId);
+        if (res.ok) {
+            _sheetData.extra_products = (_sheetData.extra_products ?? []).filter(ep => ep.id !== extraProductId);
+            const json = await res.json().catch(() => ({}));
+            if (json.data?.extra_products_total != null) {
+                _sheetData.extra_products_total = json.data.extra_products_total;
+            }
+            _renderExtrasAndCollect();
+            await _refreshExtras(entityId);
+        }
     } catch (_) {}
 }
 
-async function _refreshExtras(entityId) {
-    const apiBase = sheetApiBase();
-    const detailPath = _sheetType === 'calendar'
-        ? `/api/technician/calendar-events/${entityId}`
-        : `/api/technician/cart-activities/${entityId}`;
-    const res = await fetch(detailPath, { headers: { 'X-CSRF-TOKEN': CSRF } });
-    if (!res.ok) return;
-    const json = await res.json();
-    _sheetData = json.data ?? json;
+function _renderExtrasAndCollect() {
+    if (!_sheetData) return;
 
+    const mode = (_sheetType === 'calendar' && calendarEventIsTicket(_sheetData)) ? 'ticket' : 'activity';
     const extrasWrap = document.getElementById('sheet-extras-wrap');
     if (extrasWrap) {
-        const mode = (_sheetType === 'calendar' && calendarEventIsTicket(_sheetData)) ? 'ticket' : 'activity';
         extrasWrap.outerHTML = _buildExtraProductsSection(_sheetData, mode);
     }
 
@@ -4072,6 +4085,15 @@ async function _refreshExtras(entityId) {
     }
 
     feather.replace();
+}
+
+async function _refreshExtras(entityId) {
+    const detailPath = `/api/technician/${sheetApiBase()}/${entityId}`;
+    const res = await fetch(detailPath, { headers: { 'X-CSRF-TOKEN': CSRF } });
+    if (!res.ok) return;
+    const json = await res.json();
+    _sheetData = json.data ?? json;
+    _renderExtrasAndCollect();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
