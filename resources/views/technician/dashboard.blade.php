@@ -3275,16 +3275,23 @@ function activityIsArchived(d) {
 }
 
 function calendarEventIsTicket(d) {
+    // Gli ordini/installazioni (cart-activities) hanno ID indipendenti dal calendario.
+    if (_sheetType === 'activity') return false;
+
     if (_sheetIsTicket) return true;
     if (d?.event_type === 'ticket') return true;
     if (d?.ticket_level) return true;
+
+    if (_sheetType !== 'calendar') return false;
+
     const id = d?.id ?? _sheetId;
     const cached = _agendaCache.calendar.find(e => e.id === id);
     return cached?.event_type === 'ticket' || !!cached?.ticket_level;
 }
 
 function mergeTicketFlagsFromCache(data, id) {
-    if (!data) return data;
+    if (!data || _sheetType === 'activity') return data;
+
     if (data.event_type === 'ticket' || data.ticket_level) {
         if (data.event_type !== 'ticket') data.event_type = 'ticket';
         _sheetIsTicket = true;
@@ -3300,10 +3307,7 @@ function mergeTicketFlagsFromCache(data, id) {
 }
 
 function sheetApiBase() {
-    if (_sheetIsTicket || calendarEventIsTicket(_sheetData)) {
-        return 'calendar-events';
-    }
-    return _sheetType === 'calendar' ? 'calendar-events' : 'cart-activities';
+    return _sheetType === 'activity' ? 'cart-activities' : 'calendar-events';
 }
 
 async function openActivityDetail(type, id) {
