@@ -4005,164 +4005,103 @@ async function updatePlantGps(activityId, prefix = 'sheet') {
     }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
 }
 
-function _captureSheetFormState() {
-    return {
-        status: document.getElementById('sheet-status')?.value ?? null,
-        note: document.getElementById('sheet-note-input')?.value ?? '',
-    };
-}
-
-function _applySheetFormState(state) {
-    if (!state) return;
-    const statusEl = document.getElementById('sheet-status');
-    if (statusEl && state.status != null) statusEl.value = state.status;
-    const noteEl = document.getElementById('sheet-note-input');
-    if (noteEl && state.note) noteEl.value = state.note;
-}
-
-async function _fetchJson(url, options = {}, timeoutMs = 20000) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-        const res = await fetch(url, {
-            ...options,
-            signal: controller.signal,
-            headers: {
-                Accept: 'application/json',
-                ...(options.headers || {}),
-            },
-        });
-        let json = {};
-        try { json = await res.json(); } catch (_) {}
-        return { res, json };
-    } finally {
-        clearTimeout(timer);
-    }
-}
-
-function _resetAddProductButton() {
-    const btn = document.getElementById('sheet-add-product-btn');
-    if (!btn) return;
-    btn.disabled = false;
-    btn.textContent = 'Aggiungi';
-}
-
-async function _reloadSheetData(entityId) {
-    const detailPath = `/api/technician/${sheetApiBase()}/${entityId}`;
-    const { res, json } = await _fetchJson(detailPath, {
-        headers: { 'X-CSRF-TOKEN': CSRF },
-    });
-    if (!res.ok) return false;
-    _sheetData = json.data ?? json;
-    return true;
-}
-
-function _applyExtraProductRow(row) {
-    if (!row?.id || !_sheetData) return;
-    if (!_sheetData.extra_products) _sheetData.extra_products = [];
-    const idx = _sheetData.extra_products.findIndex(ep => ep.id === row.id);
-    const entry = {
-        id: row.id,
-        name: row.name,
-        price: row.price,
-        quantity: row.quantity,
-        subtotal: row.subtotal,
-    };
-    if (idx >= 0) _sheetData.extra_products[idx] = entry;
-    else _sheetData.extra_products.push(entry);
-    if (row.extra_products_total != null) {
-        _sheetData.extra_products_total = row.extra_products_total;
-    }
-}
-
 async function addExtraProduct(entityId) {
     const sel = document.getElementById('sheet-product-select');
-    const qtyEl = document.getElementById('sheet-product-qty');
+    const qty = parseInt(document.getElementById('sheet-product-qty')?.value, 10);
     const pid = parseInt(sel?.value, 10);
-    const qty = parseInt(qtyEl?.value, 10);
-    if (!pid || !Number.isFinite(qty) || qty < 1) {
-        showDeliverToast('Seleziona un prodotto e una quantità valida.');
-        return;
-    }
+    if (!pid || !Number.isFinite(qty) || qty < 1) return;
 
     const btn = document.getElementById('sheet-add-product-btn');
-    const formState = _captureSheetFormState();
+    const fb  = document.getElementById('sheet-extra-fb');
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
 
     const apiBase = sheetApiBase();
 
     try {
-        const { res, json } = await _fetchJson(`/api/technician/${apiBase}/${entityId}/extra-products`, {
+        const res = await fetch(`/api/technician/${apiBase}/${entityId}/extra-products`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': CSRF,
+            },
             body: JSON.stringify({ product_id: pid, quantity: qty }),
         });
+        if (res.status === 401) { showSessionExpired(); return; }
 
-        if (res.status === 401) {
-            showSessionExpired();
-            return;
-        }
-
-        if (!res.ok) {
-            const msg = json.message
-                || (json.errors ? Object.values(json.errors).flat().join(' ') : '')
-                || `Errore ${res.status}: impossibile aggiungere il prodotto.`;
-            showDeliverToast(msg);
-            return;
-        }
-
-        _applyExtraProductRow(json.data ?? {});
-
-        const formAfterAdd = _captureSheetFormState();
-        if (await _reloadSheetData(entityId)) {
-            _renderSheetContent();
-            _applySheetFormState(formAfterAdd.status ? formAfterAdd : formState);
+        if (res.ok) {
+            await _refreshExtras(entityId);
+            if (fb) {
+                fb.classList.remove('hidden');
+                setTimeout(() => fb.classList.add('hidden'), 2500);
+            }
+            const qtyEl = document.getElementById('sheet-product-qty');
+            if (qtyEl) qtyEl.value = 1;
         } else {
-            _renderSheetContent();
-            _applySheetFormState(formState);
+            const json = await res.json().catch(() => ({}));
+            showDeliverToast(json.message || 'Impossibile aggiungere il prodotto.');
         }
-
-        showDeliverToast('Prodotto aggiunto.');
-        const qtyReset = document.getElementById('sheet-product-qty');
-        if (qtyReset) qtyReset.value = 1;
     } catch (err) {
-        const aborted = err?.name === 'AbortError';
-        showDeliverToast(aborted ? 'Timeout: il server non risponde.' : 'Errore di rete, riprova.');
+        showDeliverToast('Errore di rete, riprova.');
         console.error('addExtraProduct failed', err);
     } finally {
-        _resetAddProductButton();
+        const resetBtn = document.getElementById('sheet-add-product-btn');
+        if (resetBtn) {
+            resetBtn.disabled = false;
+            resetBtn.textContent = 'Aggiungi';
+        }
     }
 }
 
 async function removeExtraProduct(entityId, extraProductId) {
     const apiBase = sheetApiBase();
-    const formState = _captureSheetFormState();
 
     try {
-        const { res, json } = await _fetchJson(`/api/technician/${apiBase}/${entityId}/extra-products/${extraProductId}`, {
+        const res = await fetch(`/api/technician/${apiBase}/${entityId}/extra-products/${extraProductId}`, {
             method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': CSRF },
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
         });
+        if (res.status === 401) { showSessionExpired(); return; }
 
-        if (res.status === 401) {
-            showSessionExpired();
-            return;
-        }
-
-        if (!res.ok) {
+        if (res.ok) {
+            await _refreshExtras(entityId);
+        } else {
+            const json = await res.json().catch(() => ({}));
             showDeliverToast(json.message || 'Impossibile rimuovere il prodotto.');
-            return;
-        }
-
-        if (await _reloadSheetData(entityId)) {
-            _renderSheetContent();
-            _applySheetFormState(formState);
-            showDeliverToast('Prodotto rimosso.');
         }
     } catch (err) {
-        showDeliverToast(err?.name === 'AbortError' ? 'Timeout: il server non risponde.' : 'Errore di rete, riprova.');
+        showDeliverToast('Errore di rete, riprova.');
         console.error('removeExtraProduct failed', err);
     }
+}
+
+async function _refreshExtras(entityId) {
+    const apiBase = sheetApiBase();
+    const res = await fetch(`/api/technician/${apiBase}/${entityId}`, {
+        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+    });
+    if (!res.ok) return;
+
+    const json = await res.json();
+    _sheetData = json.data ?? json;
+
+    const mode = (_sheetType === 'calendar' && calendarEventIsTicket(_sheetData)) ? 'ticket' : 'activity';
+    const extrasWrap = document.getElementById('sheet-extras-wrap');
+    if (extrasWrap) {
+        extrasWrap.outerHTML = _buildExtraProductsSection(_sheetData, mode);
+    }
+
+    const collectHtml = _buildCollectFromCustomerSection(_sheetData);
+    const collectWrap = document.getElementById('sheet-collect-wrap');
+    if (collectWrap) {
+        if (collectHtml) collectWrap.outerHTML = collectHtml;
+        else collectWrap.remove();
+    } else if (collectHtml) {
+        const anchor = document.getElementById('sheet-extras-wrap');
+        if (anchor) anchor.insertAdjacentHTML('beforebegin', collectHtml);
+    }
+
+    feather.replace();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
