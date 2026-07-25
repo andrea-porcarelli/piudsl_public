@@ -4025,7 +4025,7 @@ async function addExtraProduct(entityId) {
         });
         if (res.status === 401) { showSessionExpired(); return; }
         if (res.ok) {
-            await _refreshExtras(activityId);
+            await _refreshExtras(entityId);
             fb.classList.remove('hidden');
             setTimeout(() => fb.classList.add('hidden'), 2500);
             document.getElementById('sheet-product-qty').value = 1;
@@ -4041,7 +4041,7 @@ async function removeExtraProduct(entityId, extraProductId) {
             method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF },
         });
         if (res.status === 401) { showSessionExpired(); return; }
-        if (res.ok) await _refreshExtras(activityId);
+        if (res.ok) await _refreshExtras(entityId);
     } catch (_) {}
 }
 
