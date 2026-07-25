@@ -4005,6 +4005,30 @@ async function updatePlantGps(activityId, prefix = 'sheet') {
     }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
 }
 
+function _captureSheetFormState() {
+    return {
+        status: document.getElementById('sheet-status')?.value ?? null,
+        note: document.getElementById('sheet-note-input')?.value ?? '',
+    };
+}
+
+function _applySheetFormState(state) {
+    if (!state) return;
+    const statusEl = document.getElementById('sheet-status');
+    if (statusEl && state.status != null) statusEl.value = state.status;
+    const noteEl = document.getElementById('sheet-note-input');
+    if (noteEl && state.note) noteEl.value = state.note;
+}
+
+async function _reloadSheetData(entityId) {
+    const detailPath = `/api/technician/${sheetApiBase()}/${entityId}`;
+    const res = await fetch(detailPath, { headers: { 'X-CSRF-TOKEN': CSRF } });
+    if (!res.ok) return false;
+    const json = await res.json();
+    _sheetData = json.data ?? json;
+    return true;
+}
+
 async function addExtraProduct(entityId) {
     const sel = document.getElementById('sheet-product-select');
     const qty = parseInt(document.getElementById('sheet-product-qty').value);
@@ -4012,7 +4036,7 @@ async function addExtraProduct(entityId) {
     if (!pid || qty < 1) return;
 
     const btn = document.getElementById('sheet-add-product-btn');
-    const fb  = document.getElementById('sheet-extra-fb');
+    const formState = _captureSheetFormState();
     btn.disabled = true; btn.textContent = '…';
 
     const apiBase = sheetApiBase();
@@ -4024,76 +4048,51 @@ async function addExtraProduct(entityId) {
             body: JSON.stringify({ product_id: pid, quantity: qty }),
         });
         if (res.status === 401) { showSessionExpired(); return; }
+
         const json = await res.json().catch(() => ({}));
-        if (res.ok) {
-            const row = json.data ?? {};
-            if (!_sheetData.extra_products) _sheetData.extra_products = [];
-            _sheetData.extra_products.push({
-                id: row.id,
-                name: row.name,
-                price: row.price,
-                quantity: row.quantity,
-                subtotal: row.subtotal,
-            });
-            _sheetData.extra_products_total = row.extra_products_total ?? _sheetData.extra_products_total;
-            _renderExtrasAndCollect();
-            await _refreshExtras(entityId);
-            fb.classList.remove('hidden');
-            setTimeout(() => fb.classList.add('hidden'), 2500);
-            document.getElementById('sheet-product-qty').value = 1;
+        if (!res.ok) {
+            showDeliverToast(json.message || 'Impossibile aggiungere il prodotto.');
+            return;
         }
-    } catch (_) {}
+
+        if (await _reloadSheetData(entityId)) {
+            _renderSheetContent();
+            _applySheetFormState(formState);
+            showDeliverToast('Prodotto aggiunto.');
+            document.getElementById('sheet-product-qty').value = 1;
+        } else {
+            showDeliverToast('Prodotto salvato, aggiorna la pagina se non vedi il totale.');
+        }
+    } catch (_) {
+        showDeliverToast('Errore di rete, riprova.');
+    }
     btn.disabled = false; btn.textContent = 'Aggiungi';
 }
 
 async function removeExtraProduct(entityId, extraProductId) {
     const apiBase = sheetApiBase();
+    const formState = _captureSheetFormState();
+
     try {
         const res = await fetch(`/api/technician/${apiBase}/${entityId}/extra-products/${extraProductId}`, {
             method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF },
         });
         if (res.status === 401) { showSessionExpired(); return; }
-        if (res.ok) {
-            _sheetData.extra_products = (_sheetData.extra_products ?? []).filter(ep => ep.id !== extraProductId);
-            const json = await res.json().catch(() => ({}));
-            if (json.data?.extra_products_total != null) {
-                _sheetData.extra_products_total = json.data.extra_products_total;
-            }
-            _renderExtrasAndCollect();
-            await _refreshExtras(entityId);
+
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            showDeliverToast(json.message || 'Impossibile rimuovere il prodotto.');
+            return;
         }
-    } catch (_) {}
-}
 
-function _renderExtrasAndCollect() {
-    if (!_sheetData) return;
-
-    const mode = (_sheetType === 'calendar' && calendarEventIsTicket(_sheetData)) ? 'ticket' : 'activity';
-    const extrasWrap = document.getElementById('sheet-extras-wrap');
-    if (extrasWrap) {
-        extrasWrap.outerHTML = _buildExtraProductsSection(_sheetData, mode);
+        if (await _reloadSheetData(entityId)) {
+            _renderSheetContent();
+            _applySheetFormState(formState);
+            showDeliverToast('Prodotto rimosso.');
+        }
+    } catch (_) {
+        showDeliverToast('Errore di rete, riprova.');
     }
-
-    const collectHtml = _buildCollectFromCustomerSection(_sheetData);
-    const collectWrap = document.getElementById('sheet-collect-wrap');
-    if (collectWrap) {
-        if (collectHtml) collectWrap.outerHTML = collectHtml;
-        else collectWrap.remove();
-    } else if (collectHtml) {
-        const anchor = document.getElementById('sheet-extras-wrap');
-        if (anchor) anchor.insertAdjacentHTML('beforebegin', collectHtml);
-    }
-
-    feather.replace();
-}
-
-async function _refreshExtras(entityId) {
-    const detailPath = `/api/technician/${sheetApiBase()}/${entityId}`;
-    const res = await fetch(detailPath, { headers: { 'X-CSRF-TOKEN': CSRF } });
-    if (!res.ok) return;
-    const json = await res.json();
-    _sheetData = json.data ?? json;
-    _renderExtrasAndCollect();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
