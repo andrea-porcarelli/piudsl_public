@@ -4020,53 +4020,118 @@ function _applySheetFormState(state) {
     if (noteEl && state.note) noteEl.value = state.note;
 }
 
+async function _fetchJson(url, options = {}, timeoutMs = 20000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+            headers: {
+                Accept: 'application/json',
+                ...(options.headers || {}),
+            },
+        });
+        let json = {};
+        try { json = await res.json(); } catch (_) {}
+        return { res, json };
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+function _resetAddProductButton() {
+    const btn = document.getElementById('sheet-add-product-btn');
+    if (!btn) return;
+    btn.disabled = false;
+    btn.textContent = 'Aggiungi';
+}
+
 async function _reloadSheetData(entityId) {
     const detailPath = `/api/technician/${sheetApiBase()}/${entityId}`;
-    const res = await fetch(detailPath, { headers: { 'X-CSRF-TOKEN': CSRF } });
+    const { res, json } = await _fetchJson(detailPath, {
+        headers: { 'X-CSRF-TOKEN': CSRF },
+    });
     if (!res.ok) return false;
-    const json = await res.json();
     _sheetData = json.data ?? json;
     return true;
 }
 
+function _applyExtraProductRow(row) {
+    if (!row?.id || !_sheetData) return;
+    if (!_sheetData.extra_products) _sheetData.extra_products = [];
+    const idx = _sheetData.extra_products.findIndex(ep => ep.id === row.id);
+    const entry = {
+        id: row.id,
+        name: row.name,
+        price: row.price,
+        quantity: row.quantity,
+        subtotal: row.subtotal,
+    };
+    if (idx >= 0) _sheetData.extra_products[idx] = entry;
+    else _sheetData.extra_products.push(entry);
+    if (row.extra_products_total != null) {
+        _sheetData.extra_products_total = row.extra_products_total;
+    }
+}
+
 async function addExtraProduct(entityId) {
     const sel = document.getElementById('sheet-product-select');
-    const qty = parseInt(document.getElementById('sheet-product-qty').value);
-    const pid = parseInt(sel.value);
-    if (!pid || qty < 1) return;
+    const qtyEl = document.getElementById('sheet-product-qty');
+    const pid = parseInt(sel?.value, 10);
+    const qty = parseInt(qtyEl?.value, 10);
+    if (!pid || !Number.isFinite(qty) || qty < 1) {
+        showDeliverToast('Seleziona un prodotto e una quantità valida.');
+        return;
+    }
 
     const btn = document.getElementById('sheet-add-product-btn');
     const formState = _captureSheetFormState();
-    btn.disabled = true; btn.textContent = '…';
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
 
     const apiBase = sheetApiBase();
 
     try {
-        const res = await fetch(`/api/technician/${apiBase}/${entityId}/extra-products`, {
+        const { res, json } = await _fetchJson(`/api/technician/${apiBase}/${entityId}/extra-products`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
             body: JSON.stringify({ product_id: pid, quantity: qty }),
         });
-        if (res.status === 401) { showSessionExpired(); return; }
 
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) {
-            showDeliverToast(json.message || 'Impossibile aggiungere il prodotto.');
+        if (res.status === 401) {
+            showSessionExpired();
             return;
         }
 
+        if (!res.ok) {
+            const msg = json.message
+                || (json.errors ? Object.values(json.errors).flat().join(' ') : '')
+                || `Errore ${res.status}: impossibile aggiungere il prodotto.`;
+            showDeliverToast(msg);
+            return;
+        }
+
+        _applyExtraProductRow(json.data ?? {});
+
+        const formAfterAdd = _captureSheetFormState();
         if (await _reloadSheetData(entityId)) {
             _renderSheetContent();
-            _applySheetFormState(formState);
-            showDeliverToast('Prodotto aggiunto.');
-            document.getElementById('sheet-product-qty').value = 1;
+            _applySheetFormState(formAfterAdd.status ? formAfterAdd : formState);
         } else {
-            showDeliverToast('Prodotto salvato, aggiorna la pagina se non vedi il totale.');
+            _renderSheetContent();
+            _applySheetFormState(formState);
         }
-    } catch (_) {
-        showDeliverToast('Errore di rete, riprova.');
+
+        showDeliverToast('Prodotto aggiunto.');
+        const qtyReset = document.getElementById('sheet-product-qty');
+        if (qtyReset) qtyReset.value = 1;
+    } catch (err) {
+        const aborted = err?.name === 'AbortError';
+        showDeliverToast(aborted ? 'Timeout: il server non risponde.' : 'Errore di rete, riprova.');
+        console.error('addExtraProduct failed', err);
+    } finally {
+        _resetAddProductButton();
     }
-    btn.disabled = false; btn.textContent = 'Aggiungi';
 }
 
 async function removeExtraProduct(entityId, extraProductId) {
@@ -4074,12 +4139,16 @@ async function removeExtraProduct(entityId, extraProductId) {
     const formState = _captureSheetFormState();
 
     try {
-        const res = await fetch(`/api/technician/${apiBase}/${entityId}/extra-products/${extraProductId}`, {
-            method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF },
+        const { res, json } = await _fetchJson(`/api/technician/${apiBase}/${entityId}/extra-products/${extraProductId}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': CSRF },
         });
-        if (res.status === 401) { showSessionExpired(); return; }
 
-        const json = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+            showSessionExpired();
+            return;
+        }
+
         if (!res.ok) {
             showDeliverToast(json.message || 'Impossibile rimuovere il prodotto.');
             return;
@@ -4090,8 +4159,9 @@ async function removeExtraProduct(entityId, extraProductId) {
             _applySheetFormState(formState);
             showDeliverToast('Prodotto rimosso.');
         }
-    } catch (_) {
-        showDeliverToast('Errore di rete, riprova.');
+    } catch (err) {
+        showDeliverToast(err?.name === 'AbortError' ? 'Timeout: il server non risponde.' : 'Errore di rete, riprova.');
+        console.error('removeExtraProduct failed', err);
     }
 }
 
